@@ -5,7 +5,7 @@ import './App.css'
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/group-projects-backdoor-corp">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
