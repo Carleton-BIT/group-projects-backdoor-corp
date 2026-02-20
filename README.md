@@ -1,73 +1,113 @@
-# React + TypeScript + Vite
+# StudentHub
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern student dashboard for Carleton University students, integrating Brightspace and Carleton Central data into one unified platform.
 
-Currently, two official plugins are available:
+![StudentHub Preview](https://via.placeholder.com/1200x630/09090B/E31C3D?text=StudentHub)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
 
-## React Compiler
+- **📊 Student Dashboard** - Centralized hub for all academic information from Brightspace and Carleton Central
+- **📅 Calendar & Deadlines** - Sync schedules, add assignments, exams, and important dates with smart reminders
+- **✅ Task Management** - Track assignments and projects with progress tracking and priority levels
+- **📝 Notes & Resources** - Store lecture notes, create study guides, and share resources with classmates
+- **🤖 AI Assistant** - Get instant answers to academic questions with smart chatbot support
+- **🔔 Smart Notifications** - Personalized alerts for deadlines, grade updates, and announcements
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Tech Stack
 
-## Expanding the ESLint configuration
+- **Frontend Framework**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **Routing**: React Router DOM
+- **Icons**: Lucide React
+- **Styling**: CSS Variables + Modern CSS
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 📦 Installation
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+```bash
+# Clone the repository
+git clone https://github.com/Carleton-BIT/group-projects-backdoor-corp.git
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Navigate to project directory
+cd group-projects-backdoor-corp
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🏃‍♂️ Quick Start
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+# Development
+npm run dev
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
+
+## 📁 Project Structure
+
+```
+src/
+├── pages/
+│   ├── Home.tsx          # Landing page
+│   ├── Home.css          # Landing page styles
+│   ├── Dashboard.tsx     # Dashboard page
+│   └── Dashboard.css     # Dashboard styles
+├── App.tsx               # Main app component
+├── App.css               # Global app styles
+├── main.tsx              # App entry point
+└── index.css             # Global styles
+```
+
+## 🎨 Design System
+
+### Colors
+- **Primary Red**: `#E31C3D` (Carleton University Red)
+- **Background**: `#09090B` (Dark theme)
+- **Surface**: `#111113`, `#18181B`, `#27272A`
+- **Text**: `#FAFAFA`, `#A1A1AA`, `#71717A`
+
+### Typography
+- Font Family: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`
+- Responsive sizing with `clamp()`
+
+## 🌐 Live Demo
+
+Visit the live demo: [Coming Soon]
+
+## 📱 Responsive Design
+
+- Desktop: Full layout with navigation
+- Tablet: Adaptive grid layouts
+- Mobile: Hamburger menu, single column layout
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👥 Team
+
+- **Raymond Toyosato** - [RaymondToyosato](https://github.com/RaymondToyosato)
+
+## 🙏 Acknowledgments
+
+- Carleton University for inspiration
+- Brightspace and Carleton Central for data integration opportunities
+
+---
+
+Built with ❤️ for Carleton University Students
