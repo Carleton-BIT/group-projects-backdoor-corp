@@ -2,8 +2,6 @@
 
 A modern student dashboard for Carleton University students, integrating Brightspace and Carleton Central data into one unified platform.
 
-![StudentHub Preview](https://via.placeholder.com/1200x630/09090B/E31C3D?text=StudentHub)
-
 ## 🚀 Features
 
 - **📊 Student Dashboard** - Centralized hub for all academic information from Brightspace and Carleton Central
