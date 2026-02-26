@@ -110,3 +110,21 @@
   .dashboard-main { padding: 1.5rem 1rem; }
   .feature-grid { grid-template-columns: 1fr; }
 }
+
+
+/* For scrum 12 styling / dark theme */
+.upcoming-deadlines {
+  margin-top: 40px;
+  text-align: left;
+}
+
+.deadline-card {
+  background: #18181B;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  border-left: 4px solid #E31C3D;
+}
+/* end */
