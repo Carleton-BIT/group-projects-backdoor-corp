@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom'
+// react hooks not needed in this file
 import { CalendarDays, Calendar, FileText, GraduationCap, Bell, Clock, LayoutDashboard, AlertCircle, BookOpen } from 'lucide-react'
 import './Dashboard.css'
 
 function Dashboard() {
   const navigate = useNavigate()
+
+  
 
   const features = [
     { icon: CalendarDays, title: 'Course Schedule', desc: 'View and manage your courses' },
@@ -27,9 +30,12 @@ function Dashboard() {
       <main className="dashboard-main">
         <div className="dashboard-title-row">
           <h2>Welcome to Your Dashboard</h2>
-          <button className="btn-notify">
-            <Bell size={26} strokeWidth={1.5} />
-          </button>
+          <div className="title-actions">
+            <button className="btn-syllabus-top" onClick={() => navigate('/syllabus')}>Add Syllabus</button>
+            <button className="btn-notify">
+              <Bell size={26} strokeWidth={1.5} />
+            </button>
+          </div>
         </div>
         <p className="subtitle">Your home for all things student life!</p>
 
@@ -44,11 +50,11 @@ function Dashboard() {
                   </div>
                   <h3>{f.title}</h3>
                   <p>{f.desc}</p>
+                  {/* Exams card no longer toggles upload — top button controls upload */}
                 </div>
               )
             })}
           </div>
-
           <div className="dashboard-demo-card">
             <div className="dashboard-demo-header">
               <div className="dashboard-demo-title">
@@ -122,6 +128,7 @@ function Dashboard() {
         </div>
       </main>
     </div>
+    
   )
 }
 
