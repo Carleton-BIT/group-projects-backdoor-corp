@@ -1,3 +1,10 @@
+Students
+Hamza Arab
+Ismail Farah
+Abdelasim Aly
+Raymond Aleksandr
+Adam
+Marius
 # StudentHub
 
 A modern student dashboard for Carleton University students, integrating Brightspace and Carleton Central data into one unified platform.
@@ -66,12 +73,14 @@ src/
 ## 🎨 Design System
 
 ### Colors
+
 - **Primary Red**: `#E31C3D` (Carleton University Red)
 - **Background**: `#09090B` (Dark theme)
 - **Surface**: `#111113`, `#18181B`, `#27272A`
 - **Text**: `#FAFAFA`, `#A1A1AA`, `#71717A`
 
 ### Typography
+
 - Font Family: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`
 - Responsive sizing with `clamp()`
 
@@ -109,3 +118,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 Built with ❤️ for Carleton University Students
+
+
+Screenshot of the site are available in images folder
