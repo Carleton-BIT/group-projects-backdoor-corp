@@ -1,11 +1,13 @@
-Backdoor Co.(Group 1)
-Students
+#Backdoor Co.(Group 1)
+
+Students:
 Hamza Arab
 Ismail Farah
 Abdelasim Aly
 Raymond Aleksandr
 Adam
 Marius
+
 # StudentHub
 
 A modern student dashboard for Carleton University students, integrating Brightspace and Carleton Central data into one unified platform.
