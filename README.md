@@ -118,6 +118,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Carleton University for inspiration
 - Brightspace and Carleton Central for data integration opportunities
 
+## Carleton Hub Dashboard Screenshot
+![image alt](https://github.com/Carleton-BIT/group-projects-backdoor-corp/blob/3d8337870b1c9d107617ea24d158898015a93a9b/CUHUB%20Dashboard%20Screenshot.jpeg)
+
 ---
 
 Built with ❤️ for Carleton University Students
