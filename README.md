@@ -1,10 +1,4 @@
-Students
-Hamza Arab
-Ismail Farah
-Abdelasim Aly
-Raymond Aleksandr
-Adam
-Marius
+Hamza Arab, Ismail Farah, Abdelasim Aly, Raymond Aleksandr, Adam, Marius, Devon
 # StudentHub
 
 A modern student dashboard for Carleton University students, integrating Brightspace and Carleton Central data into one unified platform.
