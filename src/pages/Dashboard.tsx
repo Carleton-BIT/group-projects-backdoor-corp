@@ -1,135 +1,155 @@
-import { useNavigate } from 'react-router-dom'
-// react hooks not needed in this file
-import { CalendarDays, Calendar, FileText, GraduationCap, Bell, Clock, LayoutDashboard, AlertCircle, BookOpen } from 'lucide-react'
-import './Dashboard.css'
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './Calendar.css';
 
-function Dashboard() {
-  const navigate = useNavigate()
-
-  
-
-  const features = [
-    { icon: CalendarDays, title: 'Course Schedule', desc: 'View and manage your courses' },
-    { icon: Calendar, title: 'Calendar', desc: 'Personalized schedule' },
-    { icon: FileText, title: 'Assignments', desc: 'Track deadlines' },
-    { icon: GraduationCap, title: 'Exams', desc: 'Exam schedules' },
-  ]
-
-  return (
-    <div className="dashboard">
-      <header className="dashboard-header">
-        <div className="header-left" onClick={() => navigate('/')}>
-          <div className="logo"><span>CU</span></div>
-          <span className="brand">StudentHub</span>
-        </div>
-        <button className="btn-back" onClick={() => navigate('/')}>
-          ← Home
-        </button>
-      </header>
-
-      <main className="dashboard-main">
-        <div className="dashboard-title-row">
-          <h2>Welcome to Your Dashboard</h2>
-          <div className="title-actions">
-            <button className="btn-syllabus-top" onClick={() => navigate('/syllabus')}>Add Syllabus</button>
-            <button className="btn-notify">
-              <Bell size={26} strokeWidth={1.5} />
-            </button>
-          </div>
-        </div>
-        <p className="subtitle">Your home for all things student life!</p>
-
-        <div className="dashboard-body">
-          <div className="dashboard-feature-grid">
-            {features.map((f, i) => {
-              const IconComponent = f.icon
-              return (
-                <div key={i} className="dashboard-feature-card">
-                  <div className="dashboard-feature-icon">
-                    <IconComponent size={36} strokeWidth={1.5} />
-                  </div>
-                  <h3>{f.title}</h3>
-                  <p>{f.desc}</p>
-                  {/* Exams card no longer toggles upload — top button controls upload */}
-                </div>
-              )
-            })}
-          </div>
-          <div className="dashboard-demo-card">
-            <div className="dashboard-demo-header">
-              <div className="dashboard-demo-title">
-                <LayoutDashboard size={18} />
-                <span>Schedule</span>
-              </div>
-              <span className="dashboard-demo-date">Today</span>
-            </div>
-
-            <div className="dashboard-demo-section">
-              <div className="dashboard-demo-section-title">
-                <AlertCircle size={14} />
-                <span>Upcoming Deadlines</span>
-              </div>
-              <div className="dashboard-demo-deadlines">
-                <div className="dashboard-deadline-item urgent">
-                  <div className="dashboard-deadline-info">
-                    <span className="dashboard-deadline-course">COMP 3004</span>
-                    <span className="dashboard-deadline-task">Assignment 3</span>
-                  </div>
-                  <div className="dashboard-deadline-meta">
-                    <Clock size={12} />
-                    <span>2 days</span>
-                  </div>
-                </div>
-                <div className="dashboard-deadline-item warning">
-                  <div className="dashboard-deadline-info">
-                    <span className="dashboard-deadline-course">SYSC 4001</span>
-                    <span className="dashboard-deadline-task">Project Report</span>
-                  </div>
-                  <div className="dashboard-deadline-meta">
-                    <Clock size={12} />
-                    <span>5 days</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="dashboard-demo-section">
-              <div className="dashboard-demo-section-title">
-                <BookOpen size={14} />
-                <span>Today's Classes</span>
-              </div>
-              <div className="dashboard-demo-classes">
-                <div className="dashboard-class-item">
-                  <span className="dashboard-class-time">10:00 AM</span>
-                  <span className="dashboard-class-name">COMP 3004 - Lecture</span>
-                </div>
-                <div className="dashboard-class-item">
-                  <span className="dashboard-class-time">2:00 PM</span>
-                  <span className="dashboard-class-name">SYSC 4001 - Tutorial</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="dashboard-demo-footer">
-              <div className="dashboard-demo-stat">
-                <span className="dashboard-stat-value">2</span>
-                <span className="dashboard-stat-label">Tasks</span>
-              </div>
-              <div className="dashboard-demo-stat">
-                <span className="dashboard-stat-value">2</span>
-                <span className="dashboard-stat-label">Classes</span>
-              </div>
-              <div className="dashboard-demo-stat">
-                <span className="dashboard-stat-value">0</span>
-                <span className="dashboard-stat-label">Exam</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
-    
-  )
+// TypeScript Interface for Type Safety
+interface CalendarEvent {
+    title: string;
+    date: string;
+    time: string;
+    priority: 'high' | 'medium' | 'low';
 }
 
-export default Dashboard
+const Calendar: React.FC = () => {
+    const navigate = useNavigate();
+    const [date, setDate] = useState(new Date());
+    const [currentView, setCurrentView] = useState('month');
+    const [events, setEvents] = useState<CalendarEvent[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    // Form States for adding new assignments
+    const [formTitle, setFormTitle] = useState('');
+    const [formDate, setFormDate] = useState('');
+    const [formTime, setFormTime] = useState('');
+    const [formPriority, setFormPriority] = useState<'high' | 'medium' | 'low'>('high');
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    const handleSaveEvent = () => {
+        if (formTitle && formDate) {
+            setEvents([...events, { title: formTitle, date: formDate, time: formTime, priority: formPriority }]);
+            setIsModalOpen(false);
+            setFormTitle('');
+            setFormDate('');
+            setFormTime('');
+        }
+    };
+
+    const changeDate = (direction: number) => {
+        const newDate = new Date(date);
+        if (currentView === 'month') newDate.setMonth(date.getMonth() + direction);
+        else {
+            const offset = currentView === 'week' ? 7 : currentView === '3day' ? 3 : 1;
+            newDate.setDate(date.getDate() + (direction * offset));
+        }
+        setDate(newDate);
+    };
+
+    const renderDays = () => {
+        const days = [];
+        const m = date.getMonth();
+        const y = date.getFullYear();
+
+        if (currentView === 'month') {
+            const firstDay = new Date(y, m, 1).getDay();
+            const lastDay = new Date(y, m + 1, 0).getDate();
+            for (let x = 0; x < firstDay; x++) days.push(<div key={`empty-${x}`} className="empty-day"></div>);
+            for (let i = 1; i <= lastDay; i++) days.push(createDayElement(i, m, y));
+        } else if (currentView === 'day') {
+            days.push(createDayElement(date.getDate(), m, y));
+        } else {
+            const span = currentView === '3day' ? 3 : 7;
+            for (let i = 0; i < span; i++) {
+                let d = new Date(date);
+                d.setDate(date.getDate() + i);
+                days.push(createDayElement(d.getDate(), d.getMonth(), d.getFullYear()));
+            }
+        }
+        return days;
+    };
+
+    const createDayElement = (num: number, m: number, y: number) => {
+        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(num).padStart(2, '0')}`;
+        const isToday = num === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear();
+        
+        return (
+            <div key={dateStr} className={`calendar-day ${isToday ? 'today' : ''}`}>
+                <span className="day-num">{num}</span>
+                {events.filter(e => e.date === dateStr).map((e, index) => (
+                    <div key={index} className={`event-item priority-${e.priority}`}>
+                        {e.time && <span className="event-time">{e.time}</span>} {e.title}
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    return (
+        <div className="calendar-page-wrapper">
+            {/* Top Navigation Bar */}
+            <div className="calendar-top-nav">
+                <button className="btn-back" onClick={() => navigate('/dashboard')}>
+                    ← Back to Dashboard
+                </button>
+            </div>
+
+            <div className="calendar-container">
+                <div className="calendar-header">
+                    <div className="header-left"></div>
+                    <div className="month-nav">
+                        <button className="nav-arrow" onClick={() => changeDate(-1)}>&larr;</button>
+                        <div className="month-text-container">
+                            <h2>{monthNames[date.getMonth()]} {date.getFullYear()}</h2>
+                        </div>
+                        <button className="nav-arrow" onClick={() => changeDate(1)}>&rarr;</button>
+                    </div>
+                    <div className="view-options">
+                        {['day', '3day', 'week', 'month'].map(v => (
+                            <button key={v} className={`view-btn ${currentView === v ? 'active' : ''}`} onClick={() => setCurrentView(v)}>
+                                {v === '3day' ? '3 Day' : v.charAt(0).toUpperCase() + v.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {(currentView === 'month' || currentView === 'week') && (
+                    <div className="calendar-weekdays">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d}>{d}</div>)}
+                    </div>
+                )}
+
+                <div className={`calendar-days view-${currentView}`}>
+                    {renderDays()}
+                </div>
+            </div>
+
+            {/* Floating Action Button */}
+            <button className="floating-add" onClick={() => setIsModalOpen(true)}>+</button>
+
+            {/* Event Modal */}
+            {isModalOpen && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h3>Add Assignment</h3>
+                        <input type="text" placeholder="Assignment Name" value={formTitle} onChange={e => setFormTitle(e.target.value)} />
+                        <div className="form-row">
+                            <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
+                            <input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} />
+                        </div>
+                        <select value={formPriority} onChange={e => setFormPriority(e.target.value as any)}>
+                            <option value="high">High Priority (Red)</option>
+                            <option value="medium">Medium Priority (Yellow)</option>
+                            <option value="low">Low Priority (Green)</option>
+                        </select>
+                        <div className="modal-buttons">
+                            <button className="btn-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                            <button className="btn-save" onClick={handleSaveEvent}>Add to Calendar</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default Calendar;
