@@ -3,7 +3,7 @@
   --glass-bg: rgba(22, 22, 22, 0.85);
   --text-main: #ffffff;
   --text-muted: #888888;
-  --accent-red: #ff3131;
+  --accent-red: #E31C3D;
   --accent-glow: rgba(255, 49, 49, 0.3);
   --border: rgba(255, 255, 255, 0.1);
 }
@@ -59,7 +59,7 @@ body {
 
 /* Event Styles */
 .event-item { width: 100%; font-size: 0.75rem; padding: 4px 8px; margin-top: 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.priority-high { background: #ff3131; color: white; }
+.priority-high { background: #E31C3D; color: white; }
 .priority-medium { background: #ffcc00; color: black; }
 .priority-low { background: #00ff88; color: black; }
 
