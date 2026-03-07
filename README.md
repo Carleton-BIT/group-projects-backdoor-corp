@@ -1,27 +1,43 @@
-# Backdoor Co.(Group 1)gi
-Hamza Arab, Ismail Farah, Abdelasim Aly, Raymond Aleksandr, Adam, Marius, Devon
 # StudentHub
 
-A modern student dashboard for Carleton University students, integrating Brightspace and Carleton Central data into one unified platform.
+A modern student dashboard for Carleton University students, designed to help organize academic life in one unified platform.
 
-## 🚀 Features
+## Team - Backdoor Co. (Group 1)
 
-- **📊 Student Dashboard** - Centralized hub for all academic information from Brightspace and Carleton Central
-- **📅 Calendar & Deadlines** - Sync schedules, add assignments, exams, and important dates with smart reminders
-- **✅ Task Management** - Track assignments and projects with progress tracking and priority levels
-- **📝 Notes & Resources** - Store lecture notes, create study guides, and share resources with classmates
-- **🤖 AI Assistant** - Get instant answers to academic questions with smart chatbot support
-- **🔔 Smart Notifications** - Personalized alerts for deadlines, grade updates, and announcements
+- Hamza Arab
+- Ismail Farah
+- Abdelasim Aly
+- Raymond Xiao
+- Adam Hariri
+- Marius Triboi
+- Devon Clermont-Gauer
 
-## 🛠️ Tech Stack
+**Live Demo:** https://carleton-bit.github.io/group-projects-backdoor-corp/
+
+## Features
+
+### Implemented
+- **Landing Page** - Beautiful home page with Carleton University branding, hero section, feature overview, and responsive design
+- **Dashboard** - Centralized view showing course schedule, upcoming deadlines, and today's classes
+- **Syllabus Management** - Add and manage course syllabi
+- **User Authentication** - Secure login with email/password and Google sign-in via Firebase
+
+### Planned
+- **Calendar & Deadlines** - Sync schedules with smart reminders
+- **Task Management** - Track assignments with progress and priority levels
+- **Smart Notifications** - Personalized alerts for deadlines and announcements
+
+## Tech Stack
 
 - **Frontend Framework**: React 18 + TypeScript
 - **Build Tool**: Vite
 - **Routing**: React Router DOM
+- **Authentication**: Firebase Auth
+- **Database**: Firebase Firestore
 - **Icons**: Lucide React
 - **Styling**: CSS Variables + Modern CSS
 
-## 📦 Installation
+## Installation
 
 ```bash
 # Clone the repository
@@ -33,11 +49,29 @@ cd group-projects-backdoor-corp
 # Install dependencies
 npm install
 
+# Create environment file for Firebase
+cp .env.example .env.local
+# Add your Firebase config to .env.local
+
 # Start development server
 npm run dev
 ```
 
-## 🏃‍♂️ Quick Start
+## Environment Setup
+
+Create a `.env.local` file in the root directory with your Firebase configuration:
+
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+```
+
+## Available Scripts
 
 ```bash
 # Development
@@ -48,9 +82,12 @@ npm run build
 
 # Preview production build
 npm run preview
+
+# Lint code
+npm run lint
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -58,14 +95,18 @@ src/
 │   ├── Home.tsx          # Landing page
 │   ├── Home.css          # Landing page styles
 │   ├── Dashboard.tsx     # Dashboard page
-│   └── Dashboard.css     # Dashboard styles
-├── App.tsx               # Main app component
+│   ├── Dashboard.css     # Dashboard styles
+│   ├── Login.tsx         # Login page with Firebase Auth
+│   ├── Login.css         # Login page styles
+│   └── SyllabusPage.tsx  # Syllabus management
+├── firebase.ts           # Firebase configuration
+├── App.tsx               # Main app component with routing
 ├── App.css               # Global app styles
 ├── main.tsx              # App entry point
 └── index.css             # Global styles
 ```
 
-## 🎨 Design System
+## Design System
 
 ### Colors
 
@@ -79,17 +120,13 @@ src/
 - Font Family: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`
 - Responsive sizing with `clamp()`
 
-## 🌐 Live Demo
+## Responsive Design
 
-Visit the live demo: [Coming Soon]
+- **Desktop**: Full layout with navigation
+- **Tablet**: Adaptive grid layouts
+- **Mobile**: Hamburger menu, single column layout
 
-## 📱 Responsive Design
-
-- Desktop: Full layout with navigation
-- Tablet: Adaptive grid layouts
-- Mobile: Hamburger menu, single column layout
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
@@ -97,25 +134,14 @@ Visit the live demo: [Coming Soon]
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 Team
-
-- **Raymond Toyosato** - [RaymondToyosato](https://github.com/RaymondToyosato)
-
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Carleton University for inspiration
-- Brightspace and Carleton Central for data integration opportunities
 
-## Carleton Hub Dashboard Screenshot
-![image alt](https://github.com/Carleton-BIT/group-projects-backdoor-corp/blob/3d8337870b1c9d107617ea24d158898015a93a9b/CUHUB%20Dashboard%20Screenshot.jpeg)
+## Screenshots
+
+![Dashboard Screenshot](./CUHUB%20Dashboard%20Screenshot.jpeg)
 
 ---
 
-Built with ❤️ for Carleton University Students
-
-
-Screenshot of the site are available in images folder
+Built for Carleton University Students
