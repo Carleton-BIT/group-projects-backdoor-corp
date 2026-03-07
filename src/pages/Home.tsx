@@ -103,7 +103,7 @@ function Home() {
             <a href="#features" onClick={(e) => handleNavClick(e, '#features')}>Features</a>
             <a href="#about" onClick={(e) => handleNavClick(e, '#about')}>About</a>
             <a href="#contact" onClick={(e) => handleNavClick(e, '#contact')}>Contact</a>
-            <button className="btn-primary" onClick={() => navigate('/dashboard')}>
+            <button className="btn-primary" onClick={() => navigate('/login')}>
               Launch App
             </button>
           </div>
@@ -123,7 +123,7 @@ function Home() {
           <a href="#features" onClick={(e) => handleNavClick(e, '#features')}>Features</a>
           <a href="#about" onClick={(e) => handleNavClick(e, '#about')}>About</a>
           <a href="#contact" onClick={(e) => handleNavClick(e, '#contact')}>Contact</a>
-          <button className="btn-primary" onClick={() => navigate('/dashboard')}>
+          <button className="btn-primary" onClick={() => navigate('/login')}>
             Launch App
           </button>
         </div>
@@ -149,7 +149,7 @@ function Home() {
               and your academic tools. Manage courses, track deadlines, stay organized.
             </p>
             <div className="hero-actions">
-              <button className="btn-primary large" onClick={() => navigate('/dashboard')}>
+              <button className="btn-primary large" onClick={() => navigate('/login')}>
                 Get Started
               </button>
               <button className="btn-secondary">
@@ -283,7 +283,7 @@ function Home() {
         <div className="cta-inner">
           <h2>Ready to Get Started?</h2>
           <p>Join thousands of Carleton students using StudentHub</p>
-          <button className="btn-primary large light" onClick={() => navigate('/dashboard')}>
+          <button className="btn-primary large light" onClick={() => navigate('/login')}>
             Launch Dashboard
           </button>
         </div>
