@@ -1,10 +1,17 @@
 import { useNavigate } from 'react-router-dom'
+import { signOut } from 'firebase/auth'
 // react hooks not needed in this file
 import { CalendarDays, Calendar, FileText, GraduationCap, Bell, Clock, LayoutDashboard, AlertCircle, BookOpen } from 'lucide-react'
+import { auth } from '../firebase'
 import './Dashboard.css'
 
 function Dashboard() {
   const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await signOut(auth)
+    navigate('/', { replace: true })
+  }
 
   const features = [
     // UPDATED: Added path for Class Information
@@ -31,9 +38,14 @@ function Dashboard() {
           <div className="logo"><span>CU</span></div>
           <span className="brand">StudentHub</span>
         </div>
-        <button className="btn-back" onClick={() => navigate('/')}>
-          ← Home
-        </button>
+        <div className="header-actions">
+          <button className="btn-back" onClick={() => navigate('/')}>
+            ← Home
+          </button>
+          <button className="btn-logout" onClick={handleLogout}>
+            Log Out
+          </button>
+        </div>
       </header>
 
       <main className="dashboard-main">
