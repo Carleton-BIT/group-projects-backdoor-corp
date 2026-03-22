@@ -1,52 +1,48 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../firebase';
+import { getDefaultClasses, saveClasses, subscribeToClasses, type StoredClassInfo } from '../storage';
 import './CourseInfo.css';
 
-interface ClassData {
-    id: number;
-    title: string;
-    code: string;
-    time: string;
-    location: string;
-    profName: string;
-    profEmail: string;
-    taName: string;
-    taEmail: string;
-}
+const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const CourseInfo: React.FC = () => {
     const navigate = useNavigate();
 
-    // Start with 6 blank slots
-    const [classes, setClasses] = useState<ClassData[]>(
-        Array.from({ length: 6 }, (_, i) => ({
-            id: i,
-            title: `Class ${i + 1}`,
-            code: '', time: '', location: '',
-            profName: '', profEmail: '',
-            taName: '', taEmail: ''
-        }))
-    );
+    const [classes, setClasses] = useState<StoredClassInfo[]>(() => getDefaultClasses());
 
-    const updateClass = (id: number, field: keyof ClassData, value: string) => {
-        setClasses(classes.map(c => c.id === id ? { ...c, [field]: value } : c));
-    };
+    useEffect(() => {
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
 
-    // The logic to warn users before they lose their progress
-    const handleBack = () => {
-        const confirmLeave = window.confirm("⚠️ ATTENTION: Your progress will be lost! Data is not saved on this page. Do you still want to return to the Dashboard?");
-        if (confirmLeave) {
-            navigate('/dashboard');
+        return subscribeToClasses(uid, setClasses);
+    }, []);
+
+    const updateClass = async (id: number, field: keyof StoredClassInfo, value: string) => {
+        const uid = auth.currentUser?.uid;
+        const nextClasses = classes.map((c) => {
+            if (c.id !== id) return c;
+
+            const nextClass = { ...c, [field]: value };
+            if (field === 'startTime' || field === 'endTime') {
+                nextClass.time = [nextClass.startTime, nextClass.endTime].filter(Boolean).join(' - ');
+            }
+
+            return nextClass;
+        });
+        setClasses(nextClasses);
+        if (uid) {
+            await saveClasses(uid, nextClasses);
         }
     };
 
     return (
         <div id="ismail-course-info-page">
             <header className="info-header">
-                <button className="back-btn-red" onClick={handleBack}>← Back to Dashboard</button>
+                <button className="back-btn-red" onClick={() => navigate('/dashboard')}>← Back to Dashboard</button>
                 <h1>Course Registry</h1>
                 <div className="warning-banner">
-                    Note: Information entered here is temporary for this session.
+                    Course details save automatically and appear on the dashboard schedule.
                 </div>
             </header>
 
@@ -64,8 +60,17 @@ const CourseInfo: React.FC = () => {
                                 <input type="text" placeholder="e.g. BIT 2000" value={cls.code} onChange={e => updateClass(cls.id, 'code', e.target.value)} />
                             </div>
                             <div className="field-row">
-                                <label>Time & Location</label>
-                                <input type="text" placeholder="Time" value={cls.time} onChange={e => updateClass(cls.id, 'time', e.target.value)} />
+                                <label>Class Schedule</label>
+                                <div className="split-inputs">
+                                    <select value={cls.day} onChange={e => updateClass(cls.id, 'day', e.target.value)}>
+                                        <option value="">Select day</option>
+                                        {weekdays.map((day) => (
+                                            <option key={day} value={day}>{day}</option>
+                                        ))}
+                                    </select>
+                                    <input type="time" value={cls.startTime} onChange={e => updateClass(cls.id, 'startTime', e.target.value)} />
+                                    <input type="time" value={cls.endTime} onChange={e => updateClass(cls.id, 'endTime', e.target.value)} />
+                                </div>
                                 <input type="text" placeholder="Room/Lab" value={cls.location} onChange={e => updateClass(cls.id, 'location', e.target.value)} />
                             </div>
                             <div className="field-row">
