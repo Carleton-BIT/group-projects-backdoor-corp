@@ -144,7 +144,7 @@ const Calendar: React.FC = () => {
                             <option value="low">Low (Green)</option>
                         </select>
                         <div className="modal-btns">
-                            <button onClick={() => setIsModalOpen(false)}>Cancel</button>
+                            <button className="cancel-btn" onClick={() => setIsModalOpen(false)}>Cancel</button>
                             <button className="save-btn" onClick={handleSaveEvent}>Save</button>
                         </div>
                     </div>
