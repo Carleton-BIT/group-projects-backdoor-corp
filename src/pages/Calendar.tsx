@@ -1,19 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../firebase';
+import { saveCalendarEvents, subscribeToCalendarEvents, type StoredCalendarEvent } from '../storage';
 import './Calendar.css';
-
-interface CalendarEvent {
-    title: string;
-    date: string;
-    time: string;
-    priority: 'high' | 'medium' | 'low';
-}
 
 const Calendar: React.FC = () => {
     const navigate = useNavigate();
     const [date, setDate] = useState(new Date());
     const [currentView, setCurrentView] = useState('month');
-    const [events, setEvents] = useState<CalendarEvent[]>([]);
+    const [events, setEvents] = useState<StoredCalendarEvent[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     
     // Form States
@@ -24,9 +19,19 @@ const Calendar: React.FC = () => {
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-    const handleSaveEvent = () => {
-        if (formTitle && formDate) {
-            setEvents([...events, { title: formTitle, date: formDate, time: formTime, priority: formPriority }]);
+    useEffect(() => {
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+
+        return subscribeToCalendarEvents(uid, setEvents);
+    }, []);
+
+    const handleSaveEvent = async () => {
+        const uid = auth.currentUser?.uid;
+        if (formTitle && formDate && uid) {
+            const nextEvents = [...events, { title: formTitle, date: formDate, time: formTime, priority: formPriority }];
+            setEvents(nextEvents);
+            await saveCalendarEvents(uid, nextEvents);
             setIsModalOpen(false);
             setFormTitle(''); setFormDate(''); setFormTime('');
         }

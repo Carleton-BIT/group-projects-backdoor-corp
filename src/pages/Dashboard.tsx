@@ -1,12 +1,31 @@
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 // react hooks not needed in this file
 import { CalendarDays, Calendar, FileText, GraduationCap, Bell, Clock, LayoutDashboard, AlertCircle, BookOpen } from 'lucide-react'
 import { auth } from '../firebase'
+import { getDefaultClasses, subscribeToCalendarEvents, subscribeToClasses, type StoredCalendarEvent, type StoredClassInfo } from '../storage'
 import './Dashboard.css'
+
+const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 function Dashboard() {
   const navigate = useNavigate()
+  const [calendarEvents, setCalendarEvents] = useState<StoredCalendarEvent[]>([])
+  const [classes, setClasses] = useState<StoredClassInfo[]>(() => getDefaultClasses())
+
+  useEffect(() => {
+    const uid = auth.currentUser?.uid
+    if (!uid) return
+
+    const unsubscribeCalendar = subscribeToCalendarEvents(uid, setCalendarEvents)
+    const unsubscribeClasses = subscribeToClasses(uid, setClasses)
+
+    return () => {
+      unsubscribeCalendar()
+      unsubscribeClasses()
+    }
+  }, [])
 
   const handleLogout = async () => {
     await signOut(auth)
@@ -30,6 +49,43 @@ function Dashboard() {
     { icon: FileText, title: 'Assignments', desc: 'Track deadlines' },
     { icon: GraduationCap, title: 'Exams', desc: 'Exam schedules' },
   ]
+
+  const upcomingDeadlines = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    return calendarEvents
+      .filter((event) => {
+        const eventDate = new Date(`${event.date}T00:00:00`)
+        return !Number.isNaN(eventDate.getTime()) && eventDate >= today
+      })
+      .sort((a, b) => {
+        const left = new Date(`${a.date}T${a.time || '23:59'}`).getTime()
+        const right = new Date(`${b.date}T${b.time || '23:59'}`).getTime()
+        return left - right
+      })
+      .slice(0, 3)
+  }, [calendarEvents])
+
+  const scheduledClasses = useMemo(() => {
+    const todayName = weekdays[new Date().getDay()]
+
+    return classes
+      .filter((course) => course.day === todayName && (course.code.trim() || course.title.trim() || course.startTime.trim() || course.location.trim()))
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))
+      .slice(0, 4)
+  }, [classes])
+
+  const formatDaysUntil = (date: string) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const target = new Date(`${date}T00:00:00`)
+    const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000)
+
+    if (diffDays <= 0) return 'Today'
+    if (diffDays === 1) return '1 day'
+    return `${diffDays} days`
+  }
 
   return (
     <div className="dashboard">
@@ -98,26 +154,22 @@ function Dashboard() {
                 <span>Upcoming Deadlines</span>
               </div>
               <div className="dashboard-demo-deadlines">
-                <div className="dashboard-deadline-item urgent">
-                  <div className="dashboard-deadline-info">
-                    <span className="dashboard-deadline-course">COMP 3004</span>
-                    <span className="dashboard-deadline-task">Assignment 3</span>
-                  </div>
-                  <div className="dashboard-deadline-meta">
-                    <Clock size={12} />
-                    <span>2 days</span>
-                  </div>
-                </div>
-                <div className="dashboard-deadline-item warning">
-                  <div className="dashboard-deadline-info">
-                    <span className="dashboard-deadline-course">SYSC 4001</span>
-                    <span className="dashboard-deadline-task">Project Report</span>
-                  </div>
-                  <div className="dashboard-deadline-meta">
-                    <Clock size={12} />
-                    <span>5 days</span>
-                  </div>
-                </div>
+                {upcomingDeadlines.length === 0 ? (
+                  <p className="dashboard-empty-state">No upcoming deadlines yet. Add some in Calendar.</p>
+                ) : (
+                  upcomingDeadlines.map((event) => (
+                    <div key={`${event.date}-${event.time}-${event.title}`} className={`dashboard-deadline-item ${event.priority === 'high' ? 'urgent' : event.priority === 'medium' ? 'warning' : 'calm'}`}>
+                      <div className="dashboard-deadline-info">
+                        <span className="dashboard-deadline-course">{event.date}</span>
+                        <span className="dashboard-deadline-task">{event.title}</span>
+                      </div>
+                      <div className="dashboard-deadline-meta">
+                        <Clock size={12} />
+                        <span>{formatDaysUntil(event.date)}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -127,24 +179,29 @@ function Dashboard() {
                 <span>Today's Classes</span>
               </div>
               <div className="dashboard-demo-classes">
-                <div className="dashboard-class-item">
-                  <span className="dashboard-class-time">10:00 AM</span>
-                  <span className="dashboard-class-name">COMP 3004 - Lecture</span>
-                </div>
-                <div className="dashboard-class-item">
-                  <span className="dashboard-class-time">2:00 PM</span>
-                  <span className="dashboard-class-name">SYSC 4001 - Tutorial</span>
-                </div>
+                {scheduledClasses.length === 0 ? (
+                  <p className="dashboard-empty-state">Add classes for today in Class Information to see them here.</p>
+                ) : (
+                  scheduledClasses.map((course) => (
+                    <div key={course.id} className="dashboard-class-item">
+                      <span className="dashboard-class-time">{course.startTime || 'TBA'}</span>
+                      <span className="dashboard-class-name">
+                        {course.code || course.title}
+                        {course.location ? ` - ${course.location}` : ''}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
             <div className="dashboard-demo-footer">
               <div className="dashboard-demo-stat">
-                <span className="dashboard-stat-value">2</span>
+                <span className="dashboard-stat-value">{upcomingDeadlines.length}</span>
                 <span className="dashboard-stat-label">Tasks</span>
               </div>
               <div className="dashboard-demo-stat">
-                <span className="dashboard-stat-value">2</span>
+                <span className="dashboard-stat-value">{scheduledClasses.length}</span>
                 <span className="dashboard-stat-label">Classes</span>
               </div>
               <div className="dashboard-demo-stat">
