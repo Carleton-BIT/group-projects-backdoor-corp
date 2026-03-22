@@ -5,6 +5,20 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>StudentHub - Carleton Dashboard</title>
+    <script>
+      (function () {
+        var search = window.location.search
+        if (!search || search.indexOf('?/') !== 0) return
+
+        var pathname = search
+          .replace(/^\?\//, '/')
+          .replace(/&/g, '?')
+          .replace(/~and~/g, '&')
+
+        var target = pathname + window.location.hash
+        window.history.replaceState(null, '', target)
+      })()
+    </script>
     <style>
       /* Critical CSS - prevent layout shift */
       *, *::before, *::after { box-sizing: border-box; }
@@ -27,8 +41,8 @@
       }
       section { scroll-margin-top: 64px; }
     </style>
-    <script type="module" crossorigin src="/group-projects-backdoor-corp/assets/index-BISPeJwK.js"></script>
-    <link rel="stylesheet" crossorigin href="/group-projects-backdoor-corp/assets/index-DR-rnVCv.css">
+    <script type="module" crossorigin src="/group-projects-backdoor-corp/assets/index-Cmol6fcW.js"></script>
+    <link rel="stylesheet" crossorigin href="/group-projects-backdoor-corp/assets/index-Dmh-TBfc.css">
   </head>
   <body>
     <div id="root"></div>
