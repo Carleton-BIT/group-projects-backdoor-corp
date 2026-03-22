@@ -46,8 +46,8 @@ function Dashboard() {
       desc: 'Personalized schedule', 
       path: '/calendar' 
     },
-    { icon: FileText, title: 'Assignments', desc: 'Track deadlines' },
-    { icon: GraduationCap, title: 'Exams', desc: 'Exam schedules' },
+    { icon: FileText, title: 'Assignments', desc: 'Track deadlines', path: '/assignments' },
+    { icon: GraduationCap, title: 'Exams', desc: 'Exam schedules', path: '/exams' },
   ]
 
   const upcomingDeadlines = useMemo(() => {
@@ -55,6 +55,7 @@ function Dashboard() {
     today.setHours(0, 0, 0, 0)
 
     return calendarEvents
+      .filter((event) => event.type === 'assignment')
       .filter((event) => {
         const eventDate = new Date(`${event.date}T00:00:00`)
         return !Number.isNaN(eventDate.getTime()) && eventDate >= today
@@ -65,6 +66,17 @@ function Dashboard() {
         return left - right
       })
       .slice(0, 3)
+  }, [calendarEvents])
+
+  const upcomingExamsCount = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    return calendarEvents.filter((event) => {
+      if (event.type !== 'exam') return false
+      const eventDate = new Date(`${event.date}T00:00:00`)
+      return !Number.isNaN(eventDate.getTime()) && eventDate >= today
+    }).length
   }, [calendarEvents])
 
   const scheduledClasses = useMemo(() => {
@@ -205,7 +217,7 @@ function Dashboard() {
                 <span className="dashboard-stat-label">Classes</span>
               </div>
               <div className="dashboard-demo-stat">
-                <span className="dashboard-stat-value">0</span>
+                <span className="dashboard-stat-value">{upcomingExamsCount}</span>
                 <span className="dashboard-stat-label">Exam</span>
               </div>
             </div>

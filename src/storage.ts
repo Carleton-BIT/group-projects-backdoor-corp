@@ -6,6 +6,7 @@ export interface StoredCalendarEvent {
   date: string
   time: string
   priority: 'high' | 'medium' | 'low'
+  type: 'assignment' | 'exam'
 }
 
 export interface StoredClassInfo {
@@ -37,6 +38,7 @@ function normalizeCalendarEvent(event: Partial<StoredCalendarEvent>): StoredCale
     date: event.date ?? '',
     time: event.time ?? '',
     priority: event.priority === 'medium' || event.priority === 'low' ? event.priority : 'high',
+    type: event.type === 'exam' ? 'exam' : 'assignment',
   }
 }
 

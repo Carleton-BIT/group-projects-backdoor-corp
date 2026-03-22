@@ -16,6 +16,7 @@ const Calendar: React.FC = () => {
     const [formDate, setFormDate] = useState('');
     const [formTime, setFormTime] = useState('');
     const [formPriority, setFormPriority] = useState<'high' | 'medium' | 'low'>('high');
+    const [formType, setFormType] = useState<'assignment' | 'exam'>('assignment');
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -26,14 +27,19 @@ const Calendar: React.FC = () => {
         return subscribeToCalendarEvents(uid, setEvents);
     }, []);
 
+    const openModalForDate = (selectedDate?: string) => {
+        setFormDate(selectedDate ?? '');
+        setIsModalOpen(true);
+    };
+
     const handleSaveEvent = async () => {
         const uid = auth.currentUser?.uid;
         if (formTitle && formDate && uid) {
-            const nextEvents = [...events, { title: formTitle, date: formDate, time: formTime, priority: formPriority }];
+            const nextEvents = [...events, { title: formTitle, date: formDate, time: formTime, priority: formPriority, type: formType }];
             setEvents(nextEvents);
             await saveCalendarEvents(uid, nextEvents);
             setIsModalOpen(false);
-            setFormTitle(''); setFormDate(''); setFormTime('');
+            setFormTitle(''); setFormDate(''); setFormTime(''); setFormType('assignment');
         }
     };
 
@@ -73,7 +79,7 @@ const Calendar: React.FC = () => {
         const isToday = num === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear();
         
         return (
-            <div key={dateStr} className={`calendar-day ${isToday ? 'today' : ''}`}>
+            <div key={dateStr} className={`calendar-day ${isToday ? 'today' : ''}`} onClick={() => openModalForDate(dateStr)}>
                 <span className="day-num">{num}</span>
                 {events.filter(e => e.date === dateStr).map((e, index) => (
                     <div key={index} className={`event-item priority-${e.priority}`}>{e.title}</div>
@@ -126,6 +132,7 @@ const Calendar: React.FC = () => {
                             events.map((e, i) => (
                                 <div key={i} className={`task-card p-${e.priority}`}>
                                     <strong>{e.title}</strong>
+                                    <span>{e.type === 'exam' ? 'Exam' : 'Assignment'}</span>
                                     <span>{e.date} | {e.time}</span>
                                 </div>
                             ))
@@ -134,15 +141,19 @@ const Calendar: React.FC = () => {
                 </aside>
             </div>
 
-            <button className="floating-add" onClick={() => setIsModalOpen(true)}>+</button>
+            <button className="floating-add" onClick={() => openModalForDate()}>+</button>
 
             {isModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-box">
-                        <h3>Add Assignment</h3>
+                        <h3>Add Task</h3>
                         <input type="text" placeholder="Title" value={formTitle} onChange={e => setFormTitle(e.target.value)} />
                         <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
                         <input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} />
+                        <select value={formType} onChange={e => setFormType(e.target.value as 'assignment' | 'exam')}>
+                            <option value="assignment">Assignment</option>
+                            <option value="exam">Exam</option>
+                        </select>
                         <select value={formPriority} onChange={e => setFormPriority(e.target.value as any)}>
                             <option value="high">High (Red)</option>
                             <option value="medium">Medium (Yellow)</option>

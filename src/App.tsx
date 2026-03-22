@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard'
 import SyllabusPage from './pages/SyllabusPage'
 import Calendar from './pages/Calendar'
 import CourseInfo from './pages/CourseInfo'
+import Assignments from './pages/Assignments'
+import Exams from './pages/Exams'
 import Login from './pages/Login'
 import { auth } from './firebase'
 import './App.css'
@@ -38,6 +40,8 @@ function App() {
         <Route path="/syllabus" element={user ? <SyllabusPage /> : <Navigate to="/login" replace />} />
         <Route path="/calendar" element={user ? <Calendar /> : <Navigate to="/login" replace />} />
         <Route path="/course-info" element={user ? <CourseInfo /> : <Navigate to="/login" replace />} />
+        <Route path="/assignments" element={user ? <Assignments /> : <Navigate to="/login" replace />} />
+        <Route path="/exams" element={user ? <Exams /> : <Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   )

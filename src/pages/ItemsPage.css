@@ -1,0 +1,94 @@
+.items-page {
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+  background:
+    linear-gradient(180deg, rgba(9, 9, 11, 0.92) 0%, rgba(17, 17, 19, 0.96) 100%),
+    url('/Carleton-aerial.jpg') center/cover no-repeat fixed;
+  color: #fafafa;
+}
+
+.items-header {
+  max-width: 960px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.items-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 2rem;
+}
+
+.items-header p {
+  margin: 0;
+  color: #a1a1aa;
+}
+
+.items-back {
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fafafa;
+  cursor: pointer;
+}
+
+.items-list {
+  max-width: 960px;
+  margin: 0 auto;
+  display: grid;
+  gap: 1rem;
+}
+
+.items-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  background: rgba(24, 24, 27, 0.9);
+  border-left: 4px solid transparent;
+}
+
+.items-card.high { border-left-color: #E31C3D; }
+.items-card.medium { border-left-color: #F59E0B; }
+.items-card.low { border-left-color: #10B981; }
+
+.items-card h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.items-card p {
+  margin: 0;
+  color: #a1a1aa;
+}
+
+.items-type {
+  color: #fafafa;
+  background: rgba(227, 28, 61, 0.14);
+  border: 1px solid rgba(227, 28, 61, 0.3);
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.items-empty {
+  color: #a1a1aa;
+  padding: 1rem 0;
+}
+
+@media (max-width: 640px) {
+  .items-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .items-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
