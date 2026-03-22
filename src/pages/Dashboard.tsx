@@ -106,6 +106,14 @@ function Dashboard() {
     return `${diffDays} days`
   }
 
+  const formatEventLabel = (event: StoredCalendarEvent) => {
+    return event.courseCode ? `${event.courseCode}` : event.date
+  }
+
+  const formatEventSubtitle = (event: StoredCalendarEvent) => {
+    return event.title
+  }
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -179,8 +187,8 @@ function Dashboard() {
                   upcomingDeadlines.map((event) => (
                     <div key={`${event.date}-${event.time}-${event.title}`} className={`dashboard-deadline-item ${event.priority === 'high' ? 'urgent' : event.priority === 'medium' ? 'warning' : 'calm'}`}>
                       <div className="dashboard-deadline-info">
-                        <span className="dashboard-deadline-course">{event.date}</span>
-                        <span className="dashboard-deadline-task">{event.title}</span>
+                        <span className="dashboard-deadline-course">{formatEventLabel(event)}</span>
+                        <span className="dashboard-deadline-task">{formatEventSubtitle(event)}</span>
                       </div>
                       <div className="dashboard-deadline-meta">
                         <Clock size={12} />
@@ -226,8 +234,8 @@ function Dashboard() {
                   upcomingExams.map((event) => (
                     <div key={`${event.date}-${event.time}-${event.title}`} className={`dashboard-deadline-item ${event.priority === 'high' ? 'urgent' : event.priority === 'medium' ? 'warning' : 'calm'}`}>
                       <div className="dashboard-deadline-info">
-                        <span className="dashboard-deadline-course">{event.date}</span>
-                        <span className="dashboard-deadline-task">{event.title}</span>
+                        <span className="dashboard-deadline-course">{formatEventLabel(event)}</span>
+                        <span className="dashboard-deadline-task">{formatEventSubtitle(event)}</span>
                       </div>
                       <div className="dashboard-deadline-meta">
                         <Clock size={12} />

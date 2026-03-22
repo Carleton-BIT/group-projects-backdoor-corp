@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth } from '../firebase'
-import { subscribeToCalendarEvents, type StoredCalendarEvent } from '../storage'
+import { saveCalendarEvents, subscribeToCalendarEvents, type StoredCalendarEvent } from '../storage'
 import './ItemsPage.css'
 
 function Assignments() {
@@ -25,6 +25,23 @@ function Assignments() {
       })
   }, [events])
 
+  const handleEdit = (targetEvent: StoredCalendarEvent) => {
+    navigate('/calendar', { state: { editEvent: targetEvent } })
+  }
+
+  const formatEventLabel = (event: StoredCalendarEvent) => {
+    return event.courseCode ? `${event.courseCode} - ${event.title}` : event.title
+  }
+
+  const handleRemove = async (targetEvent: StoredCalendarEvent) => {
+    const uid = auth.currentUser?.uid
+    if (!uid) return
+
+    const nextEvents = events.filter((event) => event !== targetEvent)
+    setEvents(nextEvents)
+    await saveCalendarEvents(uid, nextEvents)
+  }
+
   return (
     <div className="items-page">
       <header className="items-header">
@@ -42,10 +59,14 @@ function Assignments() {
           assignments.map((event) => (
             <article key={`${event.date}-${event.time}-${event.title}`} className={`items-card ${event.priority}`}>
               <div>
-                <h2>{event.title}</h2>
+                <h2>{formatEventLabel(event)}</h2>
                 <p>{event.date}{event.time ? ` at ${event.time}` : ''}</p>
               </div>
-              <span className="items-type">Assignment</span>
+              <div className="items-actions">
+                <span className="items-type">Assignment</span>
+                <button className="items-edit" onClick={() => handleEdit(event)}>Edit</button>
+                <button className="items-remove" onClick={() => handleRemove(event)}>Remove</button>
+              </div>
             </article>
           ))
         )}
