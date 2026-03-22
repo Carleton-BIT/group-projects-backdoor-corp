@@ -1,0 +1,57 @@
+#ismail-calendar-page {
+  --red: #E31C3D;
+  --glass: rgba(22, 22, 22, 0.9);
+  --border: rgba(255, 255, 255, 0.1);
+  
+  min-height: 100vh;
+  background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), 
+              url('https://carleton.ca/duc/wp-content/uploads/campus-resources-header-1600x700-2.jpg') center/cover;
+  display: flex; flex-direction: column; align-items: center; padding: 20px;
+  font-family: 'Inter', sans-serif; color: white;
+}
+
+.calendar-top-nav { width: 98%; max-width: 1400px; margin-bottom: 10px; }
+.btn-back { background: var(--glass); border: 1px solid var(--border); color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+.btn-back:hover { background: var(--red); }
+
+.calendar-main-container {
+  width: 98%; max-width: 1400px; height: 82vh;
+  background: var(--glass); border: 1px solid var(--border); border-radius: 20px;
+  display: grid; grid-template-columns: 2.5fr 1.5fr; overflow: hidden;
+}
+
+/* Left Section */
+.calendar-section { border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; }
+.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.month-nav { display: flex; align-items: center; gap: 15px; }
+.nav-arrow { background: #333; border: none; color: white; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; }
+.nav-arrow:hover { background: var(--red); }
+.view-btn { background: #222; border: none; color: #888; padding: 6px 12px; cursor: pointer; font-size: 0.7rem; }
+.view-btn.active { background: var(--red); color: white; }
+
+.calendar-grid-wrapper { flex-grow: 1; display: flex; flex-direction: column; }
+.weekdays-row { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; color: #888; font-size: 0.8rem; margin-bottom: 10px; }
+.days-grid { display: grid; flex-grow: 1; border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+.calendar-day { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 5px; text-align: right; }
+.today { background: rgba(227, 28, 61, 0.1); border: 1px solid var(--red) !important; }
+
+/* Right Section */
+.task-sidebar { padding: 20px; background: rgba(0,0,0,0.2); }
+.task-card { background: #222; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; flex-direction: column; border-left: 4px solid #555; }
+.task-card.p-high { border-left-color: var(--red); }
+.task-card.p-medium { border-left-color: #ffcc00; }
+.task-card.p-low { border-left-color: #00ff88; }
+
+/* Global components */
+.floating-add { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; border-radius: 50%; background: var(--red); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(227, 28, 61, 0.4); }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal-box { background: #1a1a1a; padding: 25px; border-radius: 15px; width: 320px; display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--red); }
+.modal-box input, .modal-box select { padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; }
+.save-btn { background: var(--red); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
+
+/* View Specific Grids */
+.view-month { grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; }
+.view-week { grid-template-columns: repeat(7, 1fr); }
+.view-3day { grid-template-columns: repeat(3, 1fr); }
+.view-day { grid-template-columns: 1fr; }

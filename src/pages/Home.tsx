@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { onAuthStateChanged } from 'firebase/auth'
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -11,11 +12,13 @@ import {
   BookOpen,
   AlertCircle
 } from 'lucide-react'
+import { auth } from '../firebase'
 import './Home.css'
 
 function Home() {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(auth.currentUser))
 
   // Smooth scroll to section with offset
   const scrollToSection = (hash: string) => {
@@ -45,12 +48,24 @@ function Home() {
     }
   }, [])
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(Boolean(user))
+    })
+
+    return unsubscribe
+  }, [])
+
   // Handle click on nav links
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => {
     e.preventDefault()
     window.history.pushState(null, '', hash)
     scrollToSection(hash)
     setMenuOpen(false)
+  }
+
+  const handleLaunchApp = () => {
+    navigate(isAuthenticated ? '/dashboard' : '/login')
   }
 
   const features = [
@@ -103,7 +118,7 @@ function Home() {
             <a href="#features" onClick={(e) => handleNavClick(e, '#features')}>Features</a>
             <a href="#about" onClick={(e) => handleNavClick(e, '#about')}>About</a>
             <a href="#contact" onClick={(e) => handleNavClick(e, '#contact')}>Contact</a>
-            <button className="btn-primary" onClick={() => navigate('/login')}>
+            <button className="btn-primary" onClick={handleLaunchApp}>
               Launch App
             </button>
           </div>
@@ -123,7 +138,7 @@ function Home() {
           <a href="#features" onClick={(e) => handleNavClick(e, '#features')}>Features</a>
           <a href="#about" onClick={(e) => handleNavClick(e, '#about')}>About</a>
           <a href="#contact" onClick={(e) => handleNavClick(e, '#contact')}>Contact</a>
-          <button className="btn-primary" onClick={() => navigate('/login')}>
+          <button className="btn-primary" onClick={handleLaunchApp}>
             Launch App
           </button>
         </div>
@@ -149,8 +164,8 @@ function Home() {
               and your academic tools. Manage courses, track deadlines, stay organized.
             </p>
             <div className="hero-actions">
-              <button className="btn-primary large" onClick={() => navigate('/login')}>
-                Get Started
+              <button className="btn-primary large" onClick={handleLaunchApp}>
+                {isAuthenticated ? 'Open Dashboard' : 'Get Started'}
               </button>
               <button className="btn-secondary">
                 Learn More

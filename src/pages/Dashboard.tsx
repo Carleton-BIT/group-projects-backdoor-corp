@@ -6,11 +6,20 @@ import './Dashboard.css'
 function Dashboard() {
   const navigate = useNavigate()
 
-  
-
   const features = [
-    { icon: CalendarDays, title: 'Course Schedule', desc: 'View and manage your courses' },
-    { icon: Calendar, title: 'Calendar', desc: 'Personalized schedule' },
+    // UPDATED: Added path for Class Information
+    { 
+      icon: CalendarDays, 
+      title: 'Class Information', 
+      desc: 'View and manage your course info', 
+      path: '/course-info' 
+    },
+    { 
+      icon: Calendar, 
+      title: 'Calendar', 
+      desc: 'Personalized schedule', 
+      path: '/calendar' 
+    },
     { icon: FileText, title: 'Assignments', desc: 'Track deadlines' },
     { icon: GraduationCap, title: 'Exams', desc: 'Exam schedules' },
   ]
@@ -18,7 +27,7 @@ function Dashboard() {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <div className="header-left" onClick={() => navigate('/')}>
+        <div className="header-left" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
           <div className="logo"><span>CU</span></div>
           <span className="brand">StudentHub</span>
         </div>
@@ -44,17 +53,24 @@ function Dashboard() {
             {features.map((f, i) => {
               const IconComponent = f.icon
               return (
-                <div key={i} className="dashboard-feature-card">
+                <div 
+                  key={i} 
+                  className="dashboard-feature-card"
+                  onClick={() => {
+                    if (f.path) navigate(f.path)
+                  }}
+                  style={{ cursor: f.path ? 'pointer' : 'default' }}
+                >
                   <div className="dashboard-feature-icon">
                     <IconComponent size={36} strokeWidth={1.5} />
                   </div>
                   <h3>{f.title}</h3>
                   <p>{f.desc}</p>
-                  {/* Exams card no longer toggles upload — top button controls upload */}
                 </div>
               )
             })}
           </div>
+
           <div className="dashboard-demo-card">
             <div className="dashboard-demo-header">
               <div className="dashboard-demo-title">
@@ -128,7 +144,6 @@ function Dashboard() {
         </div>
       </main>
     </div>
-    
   )
 }
 

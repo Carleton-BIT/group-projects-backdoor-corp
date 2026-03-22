@@ -9,13 +9,14 @@
       (function () {
         var search = window.location.search
         if (!search || search.indexOf('?/') !== 0) return
+        var repoBase = '/group-projects-backdoor-corp'
 
         var pathname = search
           .replace(/^\?\//, '/')
           .replace(/&/g, '?')
           .replace(/~and~/g, '&')
 
-        var target = pathname + window.location.hash
+        var target = repoBase + pathname + window.location.hash
         window.history.replaceState(null, '', target)
       })()
     </script>
