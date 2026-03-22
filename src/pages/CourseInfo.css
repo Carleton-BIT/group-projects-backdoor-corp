@@ -1,0 +1,181 @@
+/* Main Page Container */
+#ismail-course-info-page {
+    /* Carleton Campus Background with dark overlay for text readability */
+    background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.85)), 
+                url('https://carleton.ca/duc/wp-content/uploads/campus-resources-header-1600x700-2.jpg') center/cover no-repeat fixed;
+    
+    min-height: 100vh;
+    padding: 40px 20px;
+    color: white;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: block !important;
+    box-sizing: border-box;
+}
+
+/* Header Section */
+.info-header {
+    text-align: center;
+    margin-bottom: 50px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.info-header h1 {
+    color: #ffffff; /* White title as requested */
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin: 20px 0 10px;
+    text-shadow: 0px 4px 15px rgba(0, 0, 0, 0.8);
+    letter-spacing: -1.5px;
+}
+
+/* Back Button with Carleton Red */
+.back-btn-red {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid #E31C3D;
+    color: #E31C3D;
+    padding: 12px 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.back-btn-red:hover {
+    background: #E31C3D;
+    color: white;
+    box-shadow: 0 0 20px rgba(227, 28, 61, 0.5);
+    transform: scale(1.05);
+}
+
+/* Temporary Data Warning */
+.warning-banner {
+    color: #ffffff;
+    font-size: 0.9rem;
+    background: rgba(227, 28, 61, 0.15);
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border-left: 5px solid #E31C3D;
+    backdrop-filter: blur(8px);
+    margin-top: 15px;
+}
+
+.warning-icon {
+    margin-right: 8px;
+}
+
+/* 6-Slot Grid Layout */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 35px;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding-bottom: 60px;
+}
+
+/* Individual Class Cards */
+.info-card {
+    background: rgba(15, 15, 15, 0.8); /* Dark glass effect */
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 6px solid #E31C3D; /* The Red Carleton highlight */
+    border-radius: 14px;
+    padding: 30px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.info-card:hover {
+    border-color: #E31C3D;
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Editable Header within the card */
+.editable-title {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 25px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid rgba(227, 28, 61, 0.3);
+    transition: border-color 0.3s ease;
+}
+
+.editable-title:focus {
+    outline: none;
+    border-bottom-color: #E31C3D;
+}
+
+/* Form Fields Styling */
+.field-row {
+    margin-bottom: 22px;
+}
+
+.field-row label {
+    display: block;
+    font-size: 0.75rem;
+    color: #E31C3D;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.8px;
+}
+
+.field-row input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #eee;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.field-row input:focus {
+    outline: none;
+    border-color: #E31C3D;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 0 5px rgba(227, 28, 61, 0.2);
+}
+
+/* Helper for side-by-side inputs (Time and Room) */
+.split-inputs {
+    display: flex;
+    gap: 12px;
+}
+
+.split-inputs input {
+    flex: 1;
+}
+
+/* Placeholder appearance */
+::placeholder {
+    color: #666;
+    font-size: 0.85rem;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 500px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .info-header h1 {
+        font-size: 2.5rem;
+    }
+    
+    .split-inputs {
+        flex-direction: column;
+        gap: 0;
+    }
+}

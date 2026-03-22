@@ -7,8 +7,19 @@ function Dashboard() {
   const navigate = useNavigate()
 
   const features = [
-    { icon: CalendarDays, title: 'Course Schedule', desc: 'View and manage your courses' },
-    { icon: Calendar, title: 'Calendar', desc: 'Personalized schedule', path: '/calendar' }, // Added path here
+    // UPDATED: Added path for Class Information
+    { 
+      icon: CalendarDays, 
+      title: 'Class Information', 
+      desc: 'View and manage your course info', 
+      path: '/course-info' 
+    },
+    { 
+      icon: Calendar, 
+      title: 'Calendar', 
+      desc: 'Personalized schedule', 
+      path: '/calendar' 
+    },
     { icon: FileText, title: 'Assignments', desc: 'Track deadlines' },
     { icon: GraduationCap, title: 'Exams', desc: 'Exam schedules' },
   ]
@@ -45,11 +56,9 @@ function Dashboard() {
                 <div 
                   key={i} 
                   className="dashboard-feature-card"
-                  // Added the click handler to check for a path
                   onClick={() => {
                     if (f.path) navigate(f.path)
                   }}
-                  // Added pointer cursor to show it's clickable
                   style={{ cursor: f.path ? 'pointer' : 'default' }}
                 >
                   <div className="dashboard-feature-icon">
