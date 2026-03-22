@@ -7,11 +7,15 @@
     <title>StudentHub - Carleton Dashboard</title>
     <script>
       (function () {
-        var redirect = sessionStorage.getItem('spa-redirect')
-        if (!redirect) return
+        var search = window.location.search
+        if (!search || search.indexOf('?/') !== 0) return
 
-        sessionStorage.removeItem('spa-redirect')
-        var target = redirect + window.location.hash
+        var pathname = search
+          .replace(/^\?\//, '/')
+          .replace(/&/g, '?')
+          .replace(/~and~/g, '&')
+
+        var target = pathname + window.location.hash
         window.history.replaceState(null, '', target)
       })()
     </script>

@@ -9,12 +9,11 @@
         var search = window.location.search || ''
         var hash = window.location.hash || ''
         var repoBase = '/group-projects-backdoor-corp'
-        var appPath = pathname.indexOf(repoBase) === 0
-          ? pathname.slice(repoBase.length)
-          : pathname
+        var appPath = pathname.indexOf(repoBase) === 0 ? pathname.slice(repoBase.length) : pathname
+        var normalizedPath = appPath || '/'
+        var encodedSearch = search ? search.replace(/\?/g, '&').replace(/&/g, '~and~') : ''
 
-        sessionStorage.setItem('spa-redirect', repoBase + (appPath || '/') + search)
-        window.location.replace(repoBase + '/' + hash)
+        window.location.replace(repoBase + '/?' + normalizedPath.slice(1) + encodedSearch + hash)
       })()
     </script>
   </head>
