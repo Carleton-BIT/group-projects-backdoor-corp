@@ -5,6 +5,16 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>StudentHub - Carleton Dashboard</title>
+    <script>
+      (function () {
+        var redirect = sessionStorage.getItem('spa-redirect')
+        if (!redirect) return
+
+        sessionStorage.removeItem('spa-redirect')
+        var target = redirect + window.location.hash
+        window.history.replaceState(null, '', target)
+      })()
+    </script>
     <style>
       /* Critical CSS - prevent layout shift */
       *, *::before, *::after { box-sizing: border-box; }
