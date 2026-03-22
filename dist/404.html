@@ -13,7 +13,7 @@
         var normalizedPath = appPath || '/'
         var encodedSearch = search ? search.replace(/\?/g, '&').replace(/&/g, '~and~') : ''
 
-        window.location.replace(repoBase + '/?' + normalizedPath.slice(1) + encodedSearch + hash)
+        window.location.replace(repoBase + '/?/' + normalizedPath.slice(1) + encodedSearch + hash)
       })()
     </script>
   </head>
