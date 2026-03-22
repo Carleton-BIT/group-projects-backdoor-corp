@@ -51,6 +51,12 @@
   cursor: pointer;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .dashboard .logo {
   width: 32px;
   height: 32px;
@@ -76,6 +82,23 @@
 }
 
 .btn-back:hover { border-color: var(--red); color: var(--red); }
+
+.btn-logout {
+  padding: 0.5rem 1rem;
+  background: var(--red);
+  color: white;
+  border: 1px solid var(--red);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-logout:hover {
+  background: #f03a58;
+  border-color: #f03a58;
+}
 
 /* Main */
 .dashboard-main {
@@ -368,4 +391,3 @@
   .dashboard-body { grid-template-columns: 1fr; }
   .dashboard-demo-card { position: static; }
 }
-
