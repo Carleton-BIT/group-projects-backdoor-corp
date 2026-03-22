@@ -10,6 +10,7 @@ const Calendar: React.FC = () => {
     const [currentView, setCurrentView] = useState('month');
     const [events, setEvents] = useState<StoredCalendarEvent[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingEvent, setEditingEvent] = useState<StoredCalendarEvent | null>(null);
     
     // Form States
     const [formTitle, setFormTitle] = useState('');
@@ -28,17 +29,36 @@ const Calendar: React.FC = () => {
     }, []);
 
     const openModalForDate = (selectedDate?: string) => {
+        setEditingEvent(null);
+        setFormTitle('');
         setFormDate(selectedDate ?? '');
+        setFormTime('');
+        setFormPriority('high');
+        setFormType('assignment');
+        setIsModalOpen(true);
+    };
+
+    const openModalForEdit = (event: StoredCalendarEvent) => {
+        setEditingEvent(event);
+        setFormTitle(event.title);
+        setFormDate(event.date);
+        setFormTime(event.time);
+        setFormPriority(event.priority);
+        setFormType(event.type);
         setIsModalOpen(true);
     };
 
     const handleSaveEvent = async () => {
         const uid = auth.currentUser?.uid;
         if (formTitle && formDate && uid) {
-            const nextEvents = [...events, { title: formTitle, date: formDate, time: formTime, priority: formPriority, type: formType }];
+            const nextEvent = { title: formTitle, date: formDate, time: formTime, priority: formPriority, type: formType };
+            const nextEvents = editingEvent
+                ? events.map((event) => event === editingEvent ? nextEvent : event)
+                : [...events, nextEvent];
             setEvents(nextEvents);
             await saveCalendarEvents(uid, nextEvents);
             setIsModalOpen(false);
+            setEditingEvent(null);
             setFormTitle(''); setFormDate(''); setFormTime(''); setFormType('assignment');
         }
     };
@@ -82,7 +102,16 @@ const Calendar: React.FC = () => {
             <div key={dateStr} className={`calendar-day ${isToday ? 'today' : ''}`} onClick={() => openModalForDate(dateStr)}>
                 <span className="day-num">{num}</span>
                 {events.filter(e => e.date === dateStr).map((e, index) => (
-                    <div key={index} className={`event-item priority-${e.priority}`}>{e.title}</div>
+                    <div
+                        key={index}
+                        className={`event-item priority-${e.priority}`}
+                        onClick={(clickEvent) => {
+                            clickEvent.stopPropagation();
+                            openModalForEdit(e);
+                        }}
+                    >
+                        {e.type === 'exam' ? `Exam: ${e.title}` : e.title}
+                    </div>
                 ))}
             </div>
         );
@@ -146,7 +175,7 @@ const Calendar: React.FC = () => {
             {isModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-box">
-                        <h3>Add Task</h3>
+                        <h3>{editingEvent ? 'Edit Task' : 'Add Task'}</h3>
                         <input type="text" placeholder="Title" value={formTitle} onChange={e => setFormTitle(e.target.value)} />
                         <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
                         <input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} />
@@ -160,8 +189,8 @@ const Calendar: React.FC = () => {
                             <option value="low">Low (Green)</option>
                         </select>
                         <div className="modal-btns">
-                            <button className="cancel-btn" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                            <button className="save-btn" onClick={handleSaveEvent}>Save</button>
+                            <button className="cancel-btn" onClick={() => { setIsModalOpen(false); setEditingEvent(null); }}>Cancel</button>
+                            <button className="save-btn" onClick={handleSaveEvent}>{editingEvent ? 'Update' : 'Save'}</button>
                         </div>
                     </div>
                 </div>

@@ -68,15 +68,22 @@ function Dashboard() {
       .slice(0, 3)
   }, [calendarEvents])
 
-  const upcomingExamsCount = useMemo(() => {
+  const upcomingExams = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    return calendarEvents.filter((event) => {
-      if (event.type !== 'exam') return false
-      const eventDate = new Date(`${event.date}T00:00:00`)
-      return !Number.isNaN(eventDate.getTime()) && eventDate >= today
-    }).length
+    return calendarEvents
+      .filter((event) => {
+        if (event.type !== 'exam') return false
+        const eventDate = new Date(`${event.date}T00:00:00`)
+        return !Number.isNaN(eventDate.getTime()) && eventDate >= today
+      })
+      .sort((a, b) => {
+        const left = new Date(`${a.date}T${a.time || '23:59'}`).getTime()
+        const right = new Date(`${b.date}T${b.time || '23:59'}`).getTime()
+        return left - right
+      })
+      .slice(0, 2)
   }, [calendarEvents])
 
   const scheduledClasses = useMemo(() => {
@@ -207,6 +214,31 @@ function Dashboard() {
               </div>
             </div>
 
+            <div className="dashboard-demo-section">
+              <div className="dashboard-demo-section-title">
+                <GraduationCap size={14} />
+                <span>Upcoming Exams</span>
+              </div>
+              <div className="dashboard-demo-deadlines">
+                {upcomingExams.length === 0 ? (
+                  <p className="dashboard-empty-state">No upcoming exams yet. Add one in Calendar.</p>
+                ) : (
+                  upcomingExams.map((event) => (
+                    <div key={`${event.date}-${event.time}-${event.title}`} className={`dashboard-deadline-item ${event.priority === 'high' ? 'urgent' : event.priority === 'medium' ? 'warning' : 'calm'}`}>
+                      <div className="dashboard-deadline-info">
+                        <span className="dashboard-deadline-course">{event.date}</span>
+                        <span className="dashboard-deadline-task">{event.title}</span>
+                      </div>
+                      <div className="dashboard-deadline-meta">
+                        <Clock size={12} />
+                        <span>{formatDaysUntil(event.date)}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
             <div className="dashboard-demo-footer">
               <div className="dashboard-demo-stat">
                 <span className="dashboard-stat-value">{upcomingDeadlines.length}</span>
@@ -217,7 +249,7 @@ function Dashboard() {
                 <span className="dashboard-stat-label">Classes</span>
               </div>
               <div className="dashboard-demo-stat">
-                <span className="dashboard-stat-value">{upcomingExamsCount}</span>
+                <span className="dashboard-stat-value">{upcomingExams.length}</span>
                 <span className="dashboard-stat-label">Exam</span>
               </div>
             </div>
