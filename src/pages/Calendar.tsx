@@ -1,21 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
-import { saveCalendarEvents, subscribeToCalendarEvents, type StoredCalendarEvent } from '../storage';
+import { getDefaultClasses, saveCalendarEvents, subscribeToCalendarEvents, subscribeToClasses, type StoredCalendarEvent, type StoredClassInfo } from '../storage';
 import './Calendar.css';
 
 const Calendar: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [date, setDate] = useState(new Date());
     const [currentView, setCurrentView] = useState('month');
     const [events, setEvents] = useState<StoredCalendarEvent[]>([]);
+    const [classes, setClasses] = useState<StoredClassInfo[]>(() => getDefaultClasses());
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingEvent, setEditingEvent] = useState<StoredCalendarEvent | null>(null);
     
     // Form States
     const [formTitle, setFormTitle] = useState('');
+    const [formCourseCode, setFormCourseCode] = useState('');
     const [formDate, setFormDate] = useState('');
     const [formTime, setFormTime] = useState('');
     const [formPriority, setFormPriority] = useState<'high' | 'medium' | 'low'>('high');
+    const [formType, setFormType] = useState<'assignment' | 'exam'>('assignment');
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -26,14 +31,94 @@ const Calendar: React.FC = () => {
         return subscribeToCalendarEvents(uid, setEvents);
     }, []);
 
+    useEffect(() => {
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+
+        return subscribeToClasses(uid, setClasses);
+    }, []);
+
+    useEffect(() => {
+        const pendingEvent = (location.state as { editEvent?: StoredCalendarEvent } | null)?.editEvent;
+        if (!pendingEvent) return;
+
+        openModalForEdit(pendingEvent);
+        navigate(location.pathname, { replace: true, state: null });
+    }, [location.pathname, location.state, navigate]);
+
+    const isSameEvent = (left: StoredCalendarEvent, right: StoredCalendarEvent) => {
+        return (
+            left.title === right.title &&
+            (left.courseCode ?? '') === (right.courseCode ?? '') &&
+            left.date === right.date &&
+            left.time === right.time &&
+            left.priority === right.priority &&
+            left.type === right.type &&
+            (left.sourceUploadId ?? '') === (right.sourceUploadId ?? '')
+        );
+    };
+
+    const openModalForDate = (selectedDate?: string) => {
+        setEditingEvent(null);
+        setFormTitle('');
+        setFormCourseCode('');
+        setFormDate(selectedDate ?? '');
+        setFormTime('');
+        setFormPriority('high');
+        setFormType('assignment');
+        setIsModalOpen(true);
+    };
+
+    const openModalForEdit = (event: StoredCalendarEvent) => {
+        setEditingEvent(event);
+        setFormTitle(event.title);
+        setFormCourseCode(event.courseCode ?? '');
+        setFormDate(event.date);
+        setFormTime(event.time);
+        setFormPriority(event.priority);
+        setFormType(event.type);
+        setIsModalOpen(true);
+    };
+
     const handleSaveEvent = async () => {
         const uid = auth.currentUser?.uid;
         if (formTitle && formDate && uid) {
-            const nextEvents = [...events, { title: formTitle, date: formDate, time: formTime, priority: formPriority }];
+            const nextEvent = {
+                title: formTitle,
+                courseCode: formCourseCode.trim(),
+                date: formDate,
+                time: formTime,
+                priority: formPriority,
+                type: formType,
+                sourceUploadId: editingEvent?.sourceUploadId ?? '',
+            };
+            const nextEvents = editingEvent
+                ? events.map((event) => isSameEvent(event, editingEvent) ? nextEvent : event)
+                : [...events, nextEvent];
             setEvents(nextEvents);
             await saveCalendarEvents(uid, nextEvents);
             setIsModalOpen(false);
-            setFormTitle(''); setFormDate(''); setFormTime('');
+            setEditingEvent(null);
+            setFormTitle(''); setFormCourseCode(''); setFormDate(''); setFormTime(''); setFormType('assignment');
+        }
+    };
+
+    const formatEventLabel = (event: StoredCalendarEvent) => {
+        const baseTitle = event.type === 'exam' ? `Exam: ${event.title}` : event.title;
+        return event.courseCode ? `${event.courseCode} - ${baseTitle}` : baseTitle;
+    };
+
+    const handleRemoveEvent = async (targetEvent: StoredCalendarEvent) => {
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+
+        const nextEvents = events.filter((event) => !isSameEvent(event, targetEvent));
+        setEvents(nextEvents);
+        await saveCalendarEvents(uid, nextEvents);
+
+        if (editingEvent && isSameEvent(editingEvent, targetEvent)) {
+            setIsModalOpen(false);
+            setEditingEvent(null);
         }
     };
 
@@ -73,10 +158,19 @@ const Calendar: React.FC = () => {
         const isToday = num === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear();
         
         return (
-            <div key={dateStr} className={`calendar-day ${isToday ? 'today' : ''}`}>
+            <div key={dateStr} className={`calendar-day ${isToday ? 'today' : ''}`} onClick={() => openModalForDate(dateStr)}>
                 <span className="day-num">{num}</span>
                 {events.filter(e => e.date === dateStr).map((e, index) => (
-                    <div key={index} className={`event-item priority-${e.priority}`}>{e.title}</div>
+                    <div
+                        key={index}
+                        className={`event-item priority-${e.priority}`}
+                        onClick={(clickEvent) => {
+                            clickEvent.stopPropagation();
+                            openModalForEdit(e);
+                        }}
+                    >
+                        {formatEventLabel(e)}
+                    </div>
                 ))}
             </div>
         );
@@ -125,7 +219,14 @@ const Calendar: React.FC = () => {
                         ) : (
                             events.map((e, i) => (
                                 <div key={i} className={`task-card p-${e.priority}`}>
-                                    <strong>{e.title}</strong>
+                                    <div className="task-card-top">
+                                        <strong>{formatEventLabel(e)}</strong>
+                                        <div className="task-card-actions">
+                                            <button className="task-edit" onClick={() => openModalForEdit(e)}>Edit</button>
+                                            <button className="task-remove" onClick={() => handleRemoveEvent(e)}>Remove</button>
+                                        </div>
+                                    </div>
+                                    <span>{e.type === 'exam' ? 'Exam' : 'Assignment'}</span>
                                     <span>{e.date} | {e.time}</span>
                                 </div>
                             ))
@@ -134,23 +235,41 @@ const Calendar: React.FC = () => {
                 </aside>
             </div>
 
-            <button className="floating-add" onClick={() => setIsModalOpen(true)}>+</button>
+            <button className="floating-add" onClick={() => openModalForDate()}>+</button>
 
             {isModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-box">
-                        <h3>Add Assignment</h3>
+                        <h3>{editingEvent ? 'Edit Task' : 'Add Task'}</h3>
                         <input type="text" placeholder="Title" value={formTitle} onChange={e => setFormTitle(e.target.value)} />
+                        <input
+                            type="text"
+                            list="calendar-course-codes"
+                            placeholder="Course code (e.g. IRM3001)"
+                            value={formCourseCode}
+                            onChange={e => setFormCourseCode(e.target.value)}
+                        />
+                        <datalist id="calendar-course-codes">
+                            {classes
+                                .map((course) => course.code.trim())
+                                .filter((code, index, allCodes) => code && allCodes.indexOf(code) === index)
+                                .map((code) => <option key={code} value={code} />)}
+                        </datalist>
                         <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
                         <input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} />
+                        <select value={formType} onChange={e => setFormType(e.target.value as 'assignment' | 'exam')}>
+                            <option value="assignment">Assignment</option>
+                            <option value="exam">Exam</option>
+                        </select>
                         <select value={formPriority} onChange={e => setFormPriority(e.target.value as any)}>
                             <option value="high">High (Red)</option>
                             <option value="medium">Medium (Yellow)</option>
                             <option value="low">Low (Green)</option>
                         </select>
                         <div className="modal-btns">
-                            <button className="cancel-btn" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                            <button className="save-btn" onClick={handleSaveEvent}>Save</button>
+                            {editingEvent ? <button className="delete-btn" onClick={() => handleRemoveEvent(editingEvent)}>Delete</button> : null}
+                            <button className="cancel-btn" onClick={() => { setIsModalOpen(false); setEditingEvent(null); }}>Cancel</button>
+                            <button className="save-btn" onClick={handleSaveEvent}>{editingEvent ? 'Update' : 'Save'}</button>
                         </div>
                     </div>
                 </div>

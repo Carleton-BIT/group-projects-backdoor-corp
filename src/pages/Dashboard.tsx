@@ -46,8 +46,8 @@ function Dashboard() {
       desc: 'Personalized schedule', 
       path: '/calendar' 
     },
-    { icon: FileText, title: 'Assignments', desc: 'Track deadlines' },
-    { icon: GraduationCap, title: 'Exams', desc: 'Exam schedules' },
+    { icon: FileText, title: 'Assignments', desc: 'Track deadlines', path: '/assignments' },
+    { icon: GraduationCap, title: 'Exams', desc: 'Exam schedules', path: '/exams' },
   ]
 
   const upcomingDeadlines = useMemo(() => {
@@ -55,6 +55,7 @@ function Dashboard() {
     today.setHours(0, 0, 0, 0)
 
     return calendarEvents
+      .filter((event) => event.type === 'assignment')
       .filter((event) => {
         const eventDate = new Date(`${event.date}T00:00:00`)
         return !Number.isNaN(eventDate.getTime()) && eventDate >= today
@@ -65,6 +66,24 @@ function Dashboard() {
         return left - right
       })
       .slice(0, 3)
+  }, [calendarEvents])
+
+  const upcomingExams = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    return calendarEvents
+      .filter((event) => {
+        if (event.type !== 'exam') return false
+        const eventDate = new Date(`${event.date}T00:00:00`)
+        return !Number.isNaN(eventDate.getTime()) && eventDate >= today
+      })
+      .sort((a, b) => {
+        const left = new Date(`${a.date}T${a.time || '23:59'}`).getTime()
+        const right = new Date(`${b.date}T${b.time || '23:59'}`).getTime()
+        return left - right
+      })
+      .slice(0, 2)
   }, [calendarEvents])
 
   const scheduledClasses = useMemo(() => {
@@ -85,6 +104,14 @@ function Dashboard() {
     if (diffDays <= 0) return 'Today'
     if (diffDays === 1) return '1 day'
     return `${diffDays} days`
+  }
+
+  const formatEventLabel = (event: StoredCalendarEvent) => {
+    return event.courseCode ? `${event.courseCode}` : event.date
+  }
+
+  const formatEventSubtitle = (event: StoredCalendarEvent) => {
+    return event.title
   }
 
   return (
@@ -160,8 +187,8 @@ function Dashboard() {
                   upcomingDeadlines.map((event) => (
                     <div key={`${event.date}-${event.time}-${event.title}`} className={`dashboard-deadline-item ${event.priority === 'high' ? 'urgent' : event.priority === 'medium' ? 'warning' : 'calm'}`}>
                       <div className="dashboard-deadline-info">
-                        <span className="dashboard-deadline-course">{event.date}</span>
-                        <span className="dashboard-deadline-task">{event.title}</span>
+                        <span className="dashboard-deadline-course">{formatEventLabel(event)}</span>
+                        <span className="dashboard-deadline-task">{formatEventSubtitle(event)}</span>
                       </div>
                       <div className="dashboard-deadline-meta">
                         <Clock size={12} />
@@ -195,6 +222,31 @@ function Dashboard() {
               </div>
             </div>
 
+            <div className="dashboard-demo-section">
+              <div className="dashboard-demo-section-title">
+                <GraduationCap size={14} />
+                <span>Upcoming Exams</span>
+              </div>
+              <div className="dashboard-demo-deadlines">
+                {upcomingExams.length === 0 ? (
+                  <p className="dashboard-empty-state">No upcoming exams yet. Add one in Calendar.</p>
+                ) : (
+                  upcomingExams.map((event) => (
+                    <div key={`${event.date}-${event.time}-${event.title}`} className={`dashboard-deadline-item ${event.priority === 'high' ? 'urgent' : event.priority === 'medium' ? 'warning' : 'calm'}`}>
+                      <div className="dashboard-deadline-info">
+                        <span className="dashboard-deadline-course">{formatEventLabel(event)}</span>
+                        <span className="dashboard-deadline-task">{formatEventSubtitle(event)}</span>
+                      </div>
+                      <div className="dashboard-deadline-meta">
+                        <Clock size={12} />
+                        <span>{formatDaysUntil(event.date)}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
             <div className="dashboard-demo-footer">
               <div className="dashboard-demo-stat">
                 <span className="dashboard-stat-value">{upcomingDeadlines.length}</span>
@@ -205,7 +257,7 @@ function Dashboard() {
                 <span className="dashboard-stat-label">Classes</span>
               </div>
               <div className="dashboard-demo-stat">
-                <span className="dashboard-stat-value">0</span>
+                <span className="dashboard-stat-value">{upcomingExams.length}</span>
                 <span className="dashboard-stat-label">Exam</span>
               </div>
             </div>
