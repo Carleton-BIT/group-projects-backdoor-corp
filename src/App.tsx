@@ -3,6 +3,7 @@ import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
 import SyllabusPage from './pages/SyllabusPage'
 import './App.css'
+import Calendar from './pages/Calendar';
 
 const basename = import.meta.env.PROD ? '/group-projects-backdoor-corp' : ''
 
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/syllabus" element={<SyllabusPage />} />
+        <Route path="/calendar" element={<Calendar />} />
       </Routes>
     </BrowserRouter>
   )
