@@ -358,7 +358,7 @@ export default function SyllabusPage() {
           status: 'done',
           message: summary ? `Imported ${summary}.` : 'Parsed PDF, but found limited structured data.',
           parsedCourse: reviewed.course,
-          parsedEvents: reviewed.events.slice(0, 8).map((event) => ({
+          parsedEvents: reviewed.events.map((event) => ({
             title: event.title,
             courseCode: event.courseCode ?? '',
             date: event.date,
