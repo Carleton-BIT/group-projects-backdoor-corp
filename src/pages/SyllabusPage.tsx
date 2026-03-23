@@ -24,6 +24,7 @@ type ParseReviewState = {
   course: ReviewCourse
   events: ReviewEvent[]
   missing: string[]
+  source: ParsedSyllabusData['source']
 }
 
 export default function SyllabusPage() {
@@ -320,9 +321,16 @@ export default function SyllabusPage() {
           course: toReviewCourse(parsed.course),
           events: toReviewEvents(parsed.events),
           missing: getMissingFields(parsed),
+          source: parsed.source,
         }
 
-        setActiveImport({ fileName: file.name, message: 'Review parsed info before import.', tone: 'info' })
+        setActiveImport({
+          fileName: file.name,
+          message: parsed.source === 'remote-ai'
+            ? 'AI parsed this PDF. Review the extracted info before import.'
+            : 'Using local fallback parsing. Review the extracted info before import.',
+          tone: 'info',
+        })
         const reviewed = await confirmParsedImport(reviewDraft)
         if (!reviewed) {
           setActiveImport({ fileName: file.name, message: 'Import cancelled before confirmation.', tone: 'error' })
@@ -496,6 +504,11 @@ export default function SyllabusPage() {
             <h3>Review Parsed Import</h3>
             <p>
               Check what we found in <strong>{parseReview.fileName}</strong> before importing it into your classes and calendar.
+            </p>
+            <p>
+              {parseReview.source === 'remote-ai'
+                ? 'Parsing source: AI proxy'
+                : 'Parsing source: local fallback'}
             </p>
             {getReviewMissingFields(parseReview).length > 0 ? (
               <>

@@ -71,6 +71,43 @@ VITE_FIREBASE_APP_ID=your_app_id
 VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
+If you want AI-based syllabus parsing, you can also set:
+
+```env
+VITE_SYLLABUS_API_URL=https://your-worker.your-subdomain.workers.dev
+```
+
+Important: do not put an OpenRouter API key in any `VITE_...` variable. Vite embeds those into the frontend bundle, which means anyone can view them in a GitHub Pages deployment.
+
+## Secure OpenRouter Setup For GitHub Pages
+
+GitHub Pages is a static host, so it cannot safely keep your OpenRouter key secret by itself. The secure pattern is:
+
+1. Keep this React app on GitHub Pages.
+2. Deploy a tiny proxy endpoint elsewhere, such as Cloudflare Workers.
+3. Store the OpenRouter key as a server-side secret in that proxy.
+4. Point `VITE_SYLLABUS_API_URL` at the proxy URL.
+
+This repo includes a Cloudflare Worker example at `openrouter-proxy/worker.mjs`.
+
+Example Cloudflare setup:
+
+```bash
+npm install -g wrangler
+wrangler login
+wrangler secret put OPENROUTER_API_KEY
+wrangler secret put PUBLIC_APP_URL
+wrangler deploy openrouter-proxy/worker.mjs
+```
+
+Then set:
+
+```env
+VITE_SYLLABUS_API_URL=https://your-worker-url.workers.dev
+```
+
+The app will try the remote parser first and automatically fall back to the existing local PDF parser if the proxy is missing or unavailable.
+
 ## Available Scripts
 
 ```bash

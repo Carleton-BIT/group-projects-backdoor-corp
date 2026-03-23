@@ -8,6 +8,12 @@ export interface ParsedSyllabusData {
   course: Partial<StoredClassInfo>
   events: StoredCalendarEvent[]
   rawText: string
+  source: 'remote-ai' | 'local-fallback'
+}
+
+type RemoteParserResponse = Partial<ParsedSyllabusData> & {
+  course?: Partial<StoredClassInfo>
+  events?: StoredCalendarEvent[]
 }
 
 type SyllabusStyle = 'algonquin_outline' | 'carleton_law_outline' | 'carleton_simple_outline' | 'generic'
@@ -21,6 +27,10 @@ const globalMonthDatePattern = new RegExp(`\\b${monthNamePattern}\\s+\\d{1,2}(?:
 
 function normalizeWhitespace(text: string) {
   return text.replace(/\u00a0/g, ' ').replace(/[ \t]+/g, ' ').replace(/\r/g, '')
+}
+
+function cleanText(value: unknown) {
+  return typeof value === 'string' ? value.trim() : ''
 }
 
 function createSegments(text: string) {
@@ -194,7 +204,7 @@ function pickNamedContact(lines: string[], label: RegExp, fallbackEmail?: string
   const line = lines.find((entry) => label.test(entry))
   if (!line) return { name: '', email: fallbackEmail ?? '' }
 
-  const withoutLabel = line.replace(label, '').replace(/[:\-]/g, ' ').trim()
+  const withoutLabel = line.replace(label, '').replace(/[:-]/g, ' ').trim()
   const email = line.match(emailPattern)?.[0] ?? fallbackEmail ?? ''
   const name = withoutLabel.replace(email, '').trim()
   return { name, email }
@@ -347,6 +357,15 @@ function pickSchedule(lines: string[], text: string, style: SyllabusStyle) {
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+}
+
+function normalizeEventType(value: unknown): StoredCalendarEvent['type'] {
+  return value === 'exam' ? 'exam' : 'assignment'
+}
+
+function normalizePriority(value: unknown, fallbackTitle = ''): StoredCalendarEvent['priority'] {
+  if (value === 'high' || value === 'medium' || value === 'low') return value
+  return inferPriority(fallbackTitle)
 }
 
 function inferPriority(title: string) {
@@ -621,7 +640,7 @@ function extractEvents(lines: string[], rawText: string) {
   })
 }
 
-export async function parseSyllabusPdf(file: File): Promise<ParsedSyllabusData> {
+async function extractPdfText(file: File) {
   const buffer = await file.arrayBuffer()
   const pdf = await pdfjsLib.getDocument({ data: buffer }).promise
   const textParts: string[] = []
@@ -635,7 +654,10 @@ export async function parseSyllabusPdf(file: File): Promise<ParsedSyllabusData> 
     textParts.push(pageText)
   }
 
-  const rawText = normalizeWhitespace(textParts.join('\n'))
+  return normalizeWhitespace(textParts.join('\n'))
+}
+
+function parseSyllabusTextHeuristically(rawText: string): ParsedSyllabusData {
   const lines = createSegments(rawText)
   const style = detectStyle(rawText)
 
@@ -646,7 +668,7 @@ export async function parseSyllabusPdf(file: File): Promise<ParsedSyllabusData> 
       ? pickCarletonProfessor(rawText, lines, emails[0])
       : style === 'carleton_simple_outline'
         ? pickCarletonSimpleProfessor(rawText, emails[0])
-      : pickProfessor(rawText, lines, emails[0])
+        : pickProfessor(rawText, lines, emails[0])
   const ta = pickNamedContact(lines, /\b(?:teaching assistant|ta)\b/i, emails[1])
   const schedule = pickSchedule(lines, rawText, style)
   const code = pickCourseCode(rawText)
@@ -679,5 +701,85 @@ export async function parseSyllabusPdf(file: File): Promise<ParsedSyllabusData> 
     },
     events: mergedEvents,
     rawText,
+    source: 'local-fallback',
   }
+}
+
+function normalizeRemoteParserResponse(payload: RemoteParserResponse, rawText: string): ParsedSyllabusData {
+  const fallback = parseSyllabusTextHeuristically(rawText)
+  const course = payload?.course ?? {}
+  const remoteEvents = Array.isArray(payload?.events) ? payload.events : []
+
+  const normalizedEvents: StoredCalendarEvent[] = remoteEvents
+    .map((event): StoredCalendarEvent | null => {
+      const title = cleanText(event?.title)
+      const date = cleanText(event?.date)
+      if (!title || !date) return null
+
+      return {
+        title,
+        courseCode: cleanText(event?.courseCode) || cleanText(course.code) || cleanText(fallback.course.code),
+        date,
+        time: cleanText(event?.time),
+        priority: normalizePriority(event?.priority, title),
+        type: normalizeEventType(event?.type),
+      }
+    })
+    .filter((event): event is StoredCalendarEvent => event !== null)
+
+  const mergedEvents = normalizedEvents.length > 0 ? normalizedEvents : fallback.events
+  const startTime = cleanText(course.startTime) || cleanText(fallback.course.startTime)
+  const endTime = cleanText(course.endTime) || cleanText(fallback.course.endTime)
+
+  return {
+    course: {
+      title: cleanText(course.title) || cleanText(course.code) || cleanText(fallback.course.title) || cleanText(fallback.course.code),
+      code: cleanText(course.code) || cleanText(fallback.course.code),
+      day: cleanText(course.day) || cleanText(fallback.course.day),
+      startTime,
+      endTime,
+      time: [startTime, endTime].filter(Boolean).join(' - '),
+      location: cleanText(course.location) || cleanText(fallback.course.location),
+      profName: cleanText(course.profName) || cleanText(fallback.course.profName),
+      profEmail: cleanText(course.profEmail) || cleanText(fallback.course.profEmail),
+      taName: cleanText(course.taName) || cleanText(fallback.course.taName),
+      taEmail: cleanText(course.taEmail) || cleanText(fallback.course.taEmail),
+    },
+    events: mergedEvents,
+    rawText,
+    source: 'remote-ai',
+  }
+}
+
+async function parseSyllabusRemotely(rawText: string) {
+  const endpoint = import.meta.env.VITE_SYLLABUS_API_URL?.trim()
+  if (!endpoint) return null
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ rawText }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Remote syllabus parser failed with status ${response.status}`)
+  }
+
+  const payload = await response.json() as RemoteParserResponse
+  return normalizeRemoteParserResponse(payload, rawText)
+}
+
+export async function parseSyllabusPdf(file: File): Promise<ParsedSyllabusData> {
+  const rawText = await extractPdfText(file)
+
+  try {
+    const remoteParsed = await parseSyllabusRemotely(rawText)
+    if (remoteParsed) return remoteParsed
+  } catch (error) {
+    console.warn('Remote syllabus parser unavailable, falling back to local parser.', error)
+  }
+
+  return parseSyllabusTextHeuristically(rawText)
 }

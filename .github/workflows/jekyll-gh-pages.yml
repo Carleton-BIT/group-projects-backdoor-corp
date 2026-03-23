@@ -31,6 +31,8 @@ jobs:
         run: npm ci
 
       - name: Build
+        env:
+          VITE_SYLLABUS_API_URL: https://studenthub-openrouter-proxy.h-5c7.workers.dev
         run: npm run build
 
       - name: Upload artifact
