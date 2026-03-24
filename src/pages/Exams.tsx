@@ -28,6 +28,10 @@ function Exams() {
     navigate('/calendar', { state: { editEvent: targetEvent } })
   }
 
+  const handleAddExam = () => {
+    navigate('/calendar', { state: { newDeadlineType: 'exam' as const } })
+  }
+
   const handleRemove = async (targetEvent: StoredCalendarEvent) => {
     const uid = auth.currentUser?.uid
     if (!uid) return
@@ -45,6 +49,7 @@ function Exams() {
           <h1>Exams</h1>
           <p>Exams, tests, and quizzes synced from your calendar and syllabus uploads.</p>
         </div>
+        <button className="items-add" onClick={handleAddExam}>+ Add Exam</button>
       </header>
 
       <div className="items-list">

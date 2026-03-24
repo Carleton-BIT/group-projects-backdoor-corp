@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Plus, X } from 'lucide-react'
 import { auth } from '../firebase'
@@ -48,23 +48,23 @@ const Calendar: React.FC = () => {
     return subscribeToClasses(uid, setClasses)
   }, [])
 
-  const resetForm = (selectedDate = '') => {
+  const resetForm = useCallback((selectedDate = '', deadlineType: DeadlineType = 'assignment') => {
     setEditingEvent(null)
     setFormTitle('')
     setFormCourseCode('')
     setFormDate(selectedDate)
     setFormTime('')
     setFormPriority('high')
-    setFormDeadlineType('assignment')
+    setFormDeadlineType(deadlineType)
     setFormError('')
-  }
+  }, [])
 
-  const openComposerForDate = (selectedDate = '') => {
-    resetForm(selectedDate)
+  const openComposerForDate = useCallback((selectedDate = '', deadlineType: DeadlineType = 'assignment') => {
+    resetForm(selectedDate, deadlineType)
     setIsModalOpen(true)
-  }
+  }, [resetForm])
 
-  const openModalForEdit = (event: StoredCalendarEvent) => {
+  const openModalForEdit = useCallback((event: StoredCalendarEvent) => {
     setEditingEvent(event)
     setFormTitle(event.title)
     setFormCourseCode(event.courseCode ?? '')
@@ -74,17 +74,25 @@ const Calendar: React.FC = () => {
     setFormDeadlineType(getStoredEventDeadlineType(event))
     setFormError('')
     setIsModalOpen(true)
-  }
+  }, [])
 
   useEffect(() => {
-    const pendingEvent = (location.state as { editEvent?: StoredCalendarEvent } | null)?.editEvent
-    if (!pendingEvent) return
+    const pendingState = location.state as { editEvent?: StoredCalendarEvent; newDeadlineType?: DeadlineType } | null
+    if (pendingState?.editEvent) {
+      queueMicrotask(() => {
+        openModalForEdit(pendingState.editEvent!)
+        navigate(location.pathname, { replace: true, state: null })
+      })
+      return
+    }
 
-    queueMicrotask(() => {
-      openModalForEdit(pendingEvent)
-      navigate(location.pathname, { replace: true, state: null })
-    })
-  }, [location.pathname, location.state, navigate])
+    if (pendingState?.newDeadlineType) {
+      queueMicrotask(() => {
+        openComposerForDate('', pendingState.newDeadlineType)
+        navigate(location.pathname, { replace: true, state: null })
+      })
+    }
+  }, [location.pathname, location.state, navigate, openComposerForDate, openModalForEdit])
 
   const handleSaveEvent = async () => {
     const uid = auth.currentUser?.uid

@@ -8,6 +8,9 @@ import './ItemsPage.css'
 function Assignments() {
   const navigate = useNavigate()
   const [events, setEvents] = useState<StoredCalendarEvent[]>([])
+  const [courseFilter, setCourseFilter] = useState('all')
+  const [dateFilter, setDateFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'overdue'>('all')
 
   useEffect(() => {
     const uid = auth.currentUser?.uid
@@ -21,11 +24,33 @@ function Assignments() {
       .sort((a, b) => new Date(`${a.date}T${a.time || '23:59'}`).getTime() - new Date(`${b.date}T${b.time || '23:59'}`).getTime())
   }, [events])
 
-  const upcomingAssignments = useMemo(() => assignments.filter((event) => getDaysUntil(event.date) >= 0), [assignments])
-  const overdueAssignments = useMemo(() => assignments.filter((event) => getDaysUntil(event.date) < 0), [assignments])
+  const courseOptions = useMemo(() => {
+    return Array.from(new Set(assignments.map((event) => event.courseCode?.trim()).filter(Boolean))) as string[]
+  }, [assignments])
+
+  const filteredAssignments = useMemo(() => {
+    return assignments.filter((event) => {
+      const matchesCourse = courseFilter === 'all' || (event.courseCode?.trim() ?? '') === courseFilter
+      const matchesDate = !dateFilter || event.date === dateFilter
+      const isOverdue = getDaysUntil(event.date) < 0
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'upcoming' && !isOverdue) ||
+        (statusFilter === 'overdue' && isOverdue)
+
+      return matchesCourse && matchesDate && matchesStatus
+    })
+  }, [assignments, courseFilter, dateFilter, statusFilter])
+
+  const upcomingAssignments = useMemo(() => filteredAssignments.filter((event) => getDaysUntil(event.date) >= 0), [filteredAssignments])
+  const overdueAssignments = useMemo(() => filteredAssignments.filter((event) => getDaysUntil(event.date) < 0), [filteredAssignments])
 
   const handleEdit = (targetEvent: StoredCalendarEvent) => {
     navigate('/calendar', { state: { editEvent: targetEvent } })
+  }
+
+  const handleAddAssignment = () => {
+    navigate('/calendar', { state: { newDeadlineType: 'assignment' as const } })
   }
 
   const handleRemove = async (targetEvent: StoredCalendarEvent) => {
@@ -45,11 +70,51 @@ function Assignments() {
           <h1>Assignments</h1>
           <p>Assignments, projects, presentations, and other non-exam deadlines synced from your calendar.</p>
         </div>
+        <button className="items-add" onClick={handleAddAssignment}>+ Add Assignment</button>
       </header>
+
+      <section className="items-filters">
+        <div className="items-filter">
+          <label htmlFor="assignment-course-filter">Course</label>
+          <select id="assignment-course-filter" value={courseFilter} onChange={(event) => setCourseFilter(event.target.value)}>
+            <option value="all">All courses</option>
+            {courseOptions.map((courseCode) => (
+              <option key={courseCode} value={courseCode}>{courseCode}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="items-filter">
+          <label htmlFor="assignment-date-filter">Date</label>
+          <input id="assignment-date-filter" type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} />
+        </div>
+
+        <div className="items-filter">
+          <label htmlFor="assignment-status-filter">Status</label>
+          <select id="assignment-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'all' | 'upcoming' | 'overdue')}>
+            <option value="all">All</option>
+            <option value="upcoming">Due</option>
+            <option value="overdue">Past Due</option>
+          </select>
+        </div>
+
+        <button
+          className="items-filter-reset"
+          onClick={() => {
+            setCourseFilter('all')
+            setDateFilter('')
+            setStatusFilter('all')
+          }}
+        >
+          Reset Filters
+        </button>
+      </section>
 
       <div className="items-list">
         {assignments.length === 0 ? (
           <p className="items-empty">No assignment-style deadlines yet. Add one from Calendar or Upcoming Deadlines.</p>
+        ) : filteredAssignments.length === 0 ? (
+          <p className="items-empty">No assignments match the current filters.</p>
         ) : (
           <>
             {upcomingAssignments.length > 0 ? (
