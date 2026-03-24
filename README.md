@@ -69,6 +69,12 @@ VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+
+# Optional but recommended on public deployments
+VITE_FIREBASE_APPCHECK_SITE_KEY=your_recaptcha_v3_site_key
+
+# Optional for local App Check debugging only
+VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=your_debug_token
 ```
 
 If you want AI-based syllabus parsing, you can also set:
@@ -78,6 +84,12 @@ VITE_SYLLABUS_API_URL=https://your-worker.your-subdomain.workers.dev
 ```
 
 Important: do not put an OpenRouter API key in any `VITE_...` variable. Vite embeds those into the frontend bundle, which means anyone can view them in a GitHub Pages deployment.
+
+Firebase note: the Firebase web `apiKey` is not a secret by itself. Hiding it from the repo is still useful for repo hygiene, but the real protection should come from:
+
+1. Firebase Authentication authorized domains
+2. Firestore security rules
+3. Firebase App Check for browser requests
 
 ## Secure OpenRouter Setup For GitHub Pages
 
@@ -107,6 +119,26 @@ VITE_SYLLABUS_API_URL=https://your-worker-url.workers.dev
 ```
 
 The app will try the remote parser first and automatically fall back to the existing local PDF parser if the proxy is missing or unavailable.
+
+## GitHub Pages Deployment Setup
+
+This project deploys from GitHub Actions. To make Firebase work on GitHub Pages:
+
+1. Add these repository secrets in GitHub:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+   - `VITE_FIREBASE_MEASUREMENT_ID`
+   - `VITE_FIREBASE_APPCHECK_SITE_KEY` (recommended)
+2. In Firebase Authentication, add your deployed domain to Authorized domains.
+   - For this repo, that is `carleton-bit.github.io`
+3. In Firebase Authentication, make sure Google is enabled as a sign-in provider.
+4. In Firebase App Check, register the web app and create a reCAPTCHA v3 site key if you want abuse protection on the public deployment.
+
+If Google sign-in fails on GitHub Pages with an unauthorized-domain error, it is almost always because step 2 is missing.
 
 ## Available Scripts
 
