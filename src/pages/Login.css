@@ -1,7 +1,7 @@
 .login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; position: relative; background: #09090B; }
 .login-bg { position: absolute; inset: 0; pointer-events: none; }
 .login-orb { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); width: 800px; height: 800px; background: radial-gradient(circle, rgba(227, 28, 61, 0.3) 0%, transparent 70%); }
-.back-btn { position: fixed; top: 1.5rem; left: 1.5rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: #18181B; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; color: #A1A1AA; font-size: 0.875rem; cursor: pointer; z-index: 100; }
+.back-btn { position: fixed; top: 1.5rem; left: 1.5rem; display: flex; align-items: center; gap: 0.5rem; min-height: var(--ui-control-height); padding: 0 var(--ui-padding-control-x); background: #18181B; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--ui-radius-control); color: #A1A1AA; font-size: var(--ui-font-control); font-weight: 600; cursor: pointer; z-index: 100; }
 .back-btn:hover { background: #27272A; color: #FAFAFA; }
 .login-container { width: 100%; max-width: 400px; position: relative; z-index: 1; }
 .login-card { background: #18181B; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 24px; padding: 2.5rem; }
@@ -14,7 +14,7 @@
 .error-message { padding: 0.75rem 1rem; background: rgba(227, 28, 61, 0.1); border: 1px solid rgba(227, 28, 61, 0.3); border-radius: 6px; color: #E31C3D; font-size: 0.875rem; text-align: center; }
 .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
 .form-group label { font-size: 0.875rem; font-weight: 500; color: #A1A1AA; }
-.input-wrapper { display: flex; align-items: center; background: #111113; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 0 1rem; }
+.input-wrapper { display: flex; align-items: center; min-height: var(--ui-control-height); background: #111113; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--ui-radius-control); padding: 0 var(--ui-padding-control-x); }
 .input-wrapper:focus-within { border-color: #E31C3D; }
 .input-icon { color: #71717A; flex-shrink: 0; }
 .input-wrapper input { flex: 1; background: transparent; border: none; padding: 0.875rem 0.75rem; color: #FAFAFA; font-size: 0.95rem; outline: none; }
@@ -29,12 +29,44 @@
 }
 .toggle-password { background: transparent; border: none; padding: 0.25rem; cursor: pointer; color: #71717A; }
 .toggle-password:hover { color: #FAFAFA; }
-.btn-login { width: 100%; padding: 1rem; margin-top: 0.5rem; font-size: 1rem; }
+.btn-login { width: 100%; min-height: var(--ui-control-height-lg); padding: 0 var(--ui-padding-control-x); margin-top: 0.5rem; font-size: 1rem; border-radius: var(--ui-radius-control); }
 .divider { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; color: #71717A; font-size: 0.8rem; }
 .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(255, 255, 255, 0.06); }
 .social-login { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
-.social-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; background: #111113; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; color: #FAFAFA; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
+.social-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: var(--ui-control-height); padding: 0 var(--ui-padding-control-x); background: #111113; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--ui-radius-control); color: #FAFAFA; font-size: var(--ui-font-control); font-weight: 500; cursor: pointer; }
 .social-btn:hover { background: #27272A; }
 .signup-link { text-align: center; margin-top: 1.5rem; color: #71717A; font-size: 0.9rem; }
 .link-btn { background: none; border: none; color: #E31C3D; font-weight: 600; cursor: pointer; font-size: inherit; }
 .link-btn:hover { text-decoration: underline; }
+
+@media (max-width: 640px) {
+  .login-page {
+    padding: 5rem 1rem 1rem;
+    align-items: flex-start;
+  }
+
+  .back-btn {
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    justify-content: center;
+  }
+
+  .login-card {
+    padding: 1.5rem 1.2rem;
+    border-radius: 20px;
+  }
+
+  .login-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .login-header h1 {
+    font-size: 1.45rem;
+  }
+
+  .divider {
+    margin: 1.1rem 0;
+  }
+}

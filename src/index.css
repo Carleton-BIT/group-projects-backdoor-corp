@@ -11,6 +11,18 @@
   background-color: #09090B;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --ui-control-height: 44px;
+  --ui-control-height-lg: 48px;
+  --ui-control-height-sm: 26px;
+  --ui-radius-control: 10px;
+  --ui-radius-card: 16px;
+  --ui-radius-pill: 999px;
+  --ui-padding-control-y: 0.75rem;
+  --ui-padding-control-x: 1rem;
+  --ui-padding-chip-y: 0.35rem;
+  --ui-padding-chip-x: 0.48rem;
+  --ui-font-control: 0.875rem;
+  --ui-font-chip: 0.66rem;
 }
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }

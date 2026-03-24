@@ -1,6 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import type { StoredCalendarEvent, StoredClassInfo } from './storage'
+import { normalizeDeadlineType, type DeadlineType } from './deadlines'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker
 
@@ -363,6 +364,26 @@ function normalizeEventType(value: unknown): StoredCalendarEvent['type'] {
   return value === 'exam' ? 'exam' : 'assignment'
 }
 
+function inferDeadlineType(title: string, fallbackType: 'assignment' | 'exam', context = ''): DeadlineType {
+  const normalizedTitle = title.toLowerCase()
+  const normalizedContext = context.toLowerCase()
+  const assignmentLikePattern = /\b(paper|journal|essay|reflection|response paper|reading response|article review|book review|report|research proposal|proposal|portfolio|annotated bibliography)\b/
+
+  if (/\b(lab report|lab reports)\b/.test(normalizedTitle)) return 'lab-report'
+  if (/\b(in class labs?|labs?|lab\s*\d+|lab\b)\b/.test(normalizedTitle)) return 'lab-report'
+  if (/\b(presentation|presentations)\b/.test(normalizedTitle)) return 'presentation'
+  if (/\b(project|projects)\b/.test(normalizedTitle)) return 'project'
+  if (assignmentLikePattern.test(normalizedTitle)) return 'assignment'
+  if (/\b(quizzes|quiz)\b/.test(normalizedTitle)) return 'quiz'
+  if (/\btest\b/.test(normalizedTitle)) return 'test'
+  if (/\b(midterm|final|exam)\b/.test(normalizedTitle)) return 'exam'
+
+  if (/\b(lab report|lab reports)\b/.test(normalizedContext)) return 'lab-report'
+  if (assignmentLikePattern.test(normalizedContext)) return 'assignment'
+
+  return normalizeDeadlineType(undefined, fallbackType)
+}
+
 function normalizePriority(value: unknown, fallbackTitle = ''): StoredCalendarEvent['priority'] {
   if (value === 'high' || value === 'medium' || value === 'low') return value
   return inferPriority(fallbackTitle)
@@ -388,7 +409,7 @@ function chooseEventType(context: string, dateText: string) {
   const dateIndex = context.indexOf(dateText)
   const relevantPrefix = dateIndex >= 0 ? context.slice(0, dateIndex) : context
   const examIndex = getLastKeywordIndex(relevantPrefix, /\b(midterm|final|exam|test)\b/i)
-  const assignmentIndex = getLastKeywordIndex(relevantPrefix, /\b(in class labs?|labs?|lab|assign(?:ment)?|tutorial|project|quiz|homework|presentation)\b/i)
+  const assignmentIndex = getLastKeywordIndex(relevantPrefix, /\b(in class labs?|labs?|lab|assign(?:ment)?|tutorial|project|quiz|homework|presentation|paper|journal|essay|reflection|response paper|reading response|article review|book review|report|research proposal|proposal|portfolio|annotated bibliography)\b/i)
 
   if (examIndex === -1 && assignmentIndex === -1) return null
   if (examIndex === -1) return 'assignment' as const
@@ -414,6 +435,7 @@ function extractAssessmentEvents(rawText: string, courseCode: string) {
       time: '',
       priority: inferPriority(title),
       type,
+      deadlineType: inferDeadlineType(title, type),
     })
   }
 
@@ -460,13 +482,15 @@ function extractEvaluationEvents(rawText: string, courseCode: string) {
 
   const addEvent = (title: string, date: string) => {
     if (!title || !date) return
+    const eventType = /exam/i.test(title) ? 'exam' : 'assignment'
     events.push({
       title,
       courseCode,
       date,
       time: '',
       priority: inferPriority(title),
-      type: /exam/i.test(title) ? 'exam' : 'assignment',
+      type: eventType,
+      deadlineType: inferDeadlineType(title, eventType),
     })
   }
 
@@ -518,6 +542,7 @@ function extractCarletonSimpleEvents(rawText: string, courseCode: string) {
       time: '',
       priority: inferPriority(title),
       type,
+      deadlineType: inferDeadlineType(title, type),
     })
   }
 
@@ -550,6 +575,11 @@ function extractEventTitle(context: string, type: 'assignment' | 'exam') {
     /\b(tutorial assignment)\b/i,
     /\b(lab\s*\d+[^.,;]*)\b/i,
     /\b(assignment)\b/i,
+    /\b(research paper|final paper|term paper|paper)\b/i,
+    /\b(reflective journal|learning journal|journal)\b/i,
+    /\b(essay)\b/i,
+    /\b(reflection)\b/i,
+    /\b(article review|book review|report)\b/i,
     /\b(project)\b/i,
     /\b(quiz)\b/i,
     /\b(homework)\b/i,
@@ -573,7 +603,7 @@ function extractEvents(lines: string[], rawText: string) {
   const events: StoredCalendarEvent[] = []
   const courseCode = pickCourseCode(rawText)
 
-  const addEvent = (title: string, date: string, time: string, type: 'assignment' | 'exam') => {
+  const addEvent = (title: string, date: string, time: string, type: 'assignment' | 'exam', context = '') => {
     if (!title || !date) return
     events.push({
       title,
@@ -582,6 +612,7 @@ function extractEvents(lines: string[], rawText: string) {
       time,
       priority: inferPriority(title),
       type,
+      deadlineType: inferDeadlineType(title, type, context),
     })
   }
 
@@ -615,7 +646,7 @@ function extractEvents(lines: string[], rawText: string) {
       const timeMatch = context.match(/(\d{1,2}:\d{2}\s?(?:AM|PM|am|pm))/)
       const normalizedTime = timeMatch ? toTwentyFourHour(timeMatch[1]) : ''
       const title = extractEventTitle(context, chosenType)
-      addEvent(title, normalizedDate, normalizedTime, chosenType)
+      addEvent(title, normalizedDate, normalizedTime, chosenType, context)
     }
   }
 
@@ -723,6 +754,9 @@ function normalizeRemoteParserResponse(payload: RemoteParserResponse, rawText: s
         time: cleanText(event?.time),
         priority: normalizePriority(event?.priority, title),
         type: normalizeEventType(event?.type),
+        deadlineType: cleanText(event?.deadlineType)
+          ? normalizeDeadlineType(cleanText(event?.deadlineType), normalizeEventType(event?.type))
+          : inferDeadlineType(title, normalizeEventType(event?.type)),
       }
     })
     .filter((event): event is StoredCalendarEvent => event !== null)
