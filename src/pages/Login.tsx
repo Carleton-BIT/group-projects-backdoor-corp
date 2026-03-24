@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react'
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider } from 'firebase/auth'
 import { auth } from '../firebase'
 import './Login.css'
 
@@ -38,11 +38,27 @@ function Login() {
   }
 
   const handleGoogle = async () => {
+    const provider = new GoogleAuthProvider()
+    provider.setCustomParameters({ prompt: 'select_account' })
+
     setIsLoading(true)
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider())
+      await signInWithPopup(auth, provider)
       navigate('/dashboard')
-    } catch { setError('Google sign-in failed') }
+    } catch (err: unknown) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request' || e.code === 'auth/operation-not-supported-in-this-environment') {
+        await signInWithRedirect(auth, provider)
+        return
+      }
+      if (e.code === 'auth/unauthorized-domain') {
+        setError('This site domain is not authorized in Firebase Auth. Add your GitHub Pages domain in Firebase Authentication -> Settings -> Authorized domains.')
+      } else if (e.code === 'auth/operation-not-allowed') {
+        setError('Google sign-in is not enabled for this Firebase project.')
+      } else {
+        setError(e.message || e.code || 'Google sign-in failed')
+      }
+    }
     finally { setIsLoading(false) }
   }
 
