@@ -32,10 +32,12 @@
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: #f5f5f7;
-    padding: 0.75rem 1rem;
-    border-radius: 999px;
+    min-height: var(--ui-control-height);
+    padding: 0 var(--ui-padding-control-x);
+    border-radius: var(--ui-radius-pill);
     cursor: pointer;
     font-weight: 700;
+    font-size: var(--ui-font-control);
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -124,13 +126,15 @@
 .add-course-btn {
     margin-top: 1rem;
     width: fit-content;
-    padding: 0.7rem 0.95rem;
-    border-radius: 999px;
+    min-height: var(--ui-control-height);
+    padding: 0 var(--ui-padding-control-x);
+    border-radius: var(--ui-radius-pill);
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.04);
     color: #f5f5f7;
     cursor: pointer;
     font-weight: 700;
+    font-size: var(--ui-font-control);
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -201,11 +205,12 @@
     background: rgba(227, 28, 61, 0.08);
     border: 1px solid rgba(227, 28, 61, 0.24);
     color: #fca5a5;
-    padding: 0.6rem 0.85rem;
-    border-radius: 999px;
+    min-height: var(--ui-control-height-sm);
+    padding: 0 var(--ui-padding-chip-x);
+    border-radius: var(--ui-radius-pill);
     cursor: pointer;
     font-weight: 700;
-    font-size: 0.78rem;
+    font-size: var(--ui-font-chip);
     transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     flex-shrink: 0;
 }
@@ -219,12 +224,14 @@
 .info-card-status {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     width: fit-content;
-    padding: 0.35rem 0.65rem;
-    border-radius: 999px;
+    min-height: var(--ui-control-height-sm);
+    padding: 0 var(--ui-padding-chip-x);
+    border-radius: var(--ui-radius-pill);
     background: rgba(255, 255, 255, 0.04);
     color: #a1a1aa;
-    font-size: 0.75rem;
+    font-size: var(--ui-font-chip);
     font-weight: 700;
 }
 
@@ -253,13 +260,14 @@
 .field-row select {
     width: 100%;
     min-width: 0;
-    min-height: 46px;
-    padding: 0.8rem 0.9rem;
-    border-radius: 12px;
+    min-height: var(--ui-control-height);
+    height: var(--ui-control-height);
+    padding: 0 var(--ui-padding-control-x);
+    border-radius: var(--ui-radius-control);
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.04);
     color: #f3f4f6;
-    font-size: 0.94rem;
+    font-size: var(--ui-font-control);
     box-sizing: border-box;
 }
 
@@ -290,6 +298,14 @@
     .info-hero {
         grid-template-columns: 1fr;
     }
+
+    .info-summary-card {
+        min-height: 0;
+    }
+
+    .add-course-btn {
+        width: 100%;
+    }
 }
 
 @media (max-width: 680px) {
@@ -303,6 +319,33 @@
         align-items: stretch;
     }
 
+    .info-hero {
+        padding: 1rem;
+        border-radius: 20px;
+    }
+
+    .info-hero h1 {
+        font-size: clamp(1.65rem, 10vw, 2.35rem);
+        line-height: 1.02;
+    }
+
+    .info-subtitle {
+        font-size: 0.92rem;
+    }
+
+    .info-summary-value {
+        font-size: 2.35rem;
+    }
+
+    .info-card {
+        padding: 1rem;
+        border-radius: 18px;
+    }
+
+    .editable-title {
+        font-size: 1.2rem;
+    }
+
     .two-up,
     .split-inputs {
         grid-template-columns: 1fr;
@@ -310,5 +353,21 @@
 
     .delete-course-btn {
         align-self: flex-start;
+    }
+}
+
+@media (max-width: 420px) {
+    #ismail-course-info-page {
+        padding: 1rem 0.75rem 1.6rem;
+    }
+
+    .info-header-badge,
+    .back-btn-red,
+    .delete-course-btn,
+    .add-course-btn,
+    .info-card-status {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
     }
 }

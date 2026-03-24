@@ -14,6 +14,15 @@ import {
   type StoredSyllabusUpload,
 } from '../storage'
 import { parseSyllabusPdf, type ParsedSyllabusData } from '../syllabusParser'
+import {
+  DEADLINE_TYPE_COLORS,
+  deadlineTypeToEventType,
+  formatDeadlineType,
+  getStoredEventDeadlineType,
+  normalizeDeadlineType,
+  isSameCalendarEvent,
+  type DeadlineType,
+} from '../deadlines'
 import './Dashboard.css'
 
 type ReviewCourse = NonNullable<StoredSyllabusUpload['parsedCourse']>
@@ -26,6 +35,10 @@ type ParseReviewState = {
   missing: string[]
   source: ParsedSyllabusData['source']
 }
+
+const ASSIGNMENT_REVIEW_TYPES: DeadlineType[] = ['assignment', 'presentation', 'project', 'lab-report', 'other']
+const EXAM_REVIEW_TYPES: DeadlineType[] = ['quiz', 'test', 'exam']
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export default function SyllabusPage() {
   const navigate = useNavigate()
@@ -59,28 +72,6 @@ export default function SyllabusPage() {
       unsubscribeUploads()
     }
   }, [])
-
-  useEffect(() => {
-    const uid = auth.currentUser?.uid
-    if (!uid || uploads.length === 0) return
-
-    const stuckUploads = uploads.filter(
-      upload => upload.status === 'processing' || upload.status === 'review',
-    )
-    if (stuckUploads.length === 0) return
-
-    const recoveredUploads = uploads.map((upload) =>
-      upload.status === 'processing' || upload.status === 'review'
-        ? {
-            ...upload,
-            status: 'error' as const,
-            message: 'This upload did not finish saving. Remove it and upload again.',
-          }
-        : upload,
-    )
-
-    void saveUploadsList(uid, recoveredUploads)
-  }, [uploads])
 
   const normalizeToSixClasses = (items: StoredClassInfo[]) => {
     const normalized = items.slice(0, 6).map((item, index) => ({
@@ -126,7 +117,7 @@ export default function SyllabusPage() {
     const next = [...current]
     for (const event of incoming) {
       const normalizedEvent = { ...event, sourceUploadId }
-      const exists = next.some((item) => item.title === normalizedEvent.title && (item.courseCode ?? '') === (normalizedEvent.courseCode ?? '') && item.date === normalizedEvent.date && item.time === normalizedEvent.time && item.type === normalizedEvent.type && item.sourceUploadId === sourceUploadId)
+      const exists = next.some((item) => isSameCalendarEvent(item, normalizedEvent) && item.sourceUploadId === sourceUploadId)
       if (!exists) next.push(normalizedEvent)
     }
     return next
@@ -137,6 +128,30 @@ export default function SyllabusPage() {
     uploadsRef.current = items
     await saveSyllabusUploads(uid, items)
   }
+
+  useEffect(() => {
+    const uid = auth.currentUser?.uid
+    if (!uid || uploads.length === 0) return
+
+    const stuckUploads = uploads.filter(
+      upload => upload.status === 'processing' || upload.status === 'review',
+    )
+    if (stuckUploads.length === 0) return
+
+    const recoveredUploads = uploads.map((upload) =>
+      upload.status === 'processing' || upload.status === 'review'
+        ? {
+            ...upload,
+            status: 'error' as const,
+            message: 'This upload did not finish saving. Remove it and upload again.',
+          }
+        : upload,
+    )
+
+    queueMicrotask(() => {
+      void saveUploadsList(uid, recoveredUploads)
+    })
+  }, [uploads])
 
   const summarizeCourse = (course?: StoredSyllabusUpload['parsedCourse']) => {
     if (!course) return []
@@ -201,7 +216,8 @@ export default function SyllabusPage() {
       courseCode: event.courseCode ?? '',
       date: event.date,
       time: event.time,
-      type: event.type,
+      type: deadlineTypeToEventType(normalizeDeadlineType(event.deadlineType, event.type)),
+      deadlineType: normalizeDeadlineType(event.deadlineType, event.type),
       priority: event.priority,
     }))
 
@@ -254,6 +270,7 @@ export default function SyllabusPage() {
           date: '',
           time: '',
           type,
+          deadlineType: type === 'exam' ? 'exam' : 'assignment',
           priority: type === 'exam' ? 'high' : 'low',
         },
       ],
@@ -268,6 +285,10 @@ export default function SyllabusPage() {
         courseCode: current.course.code,
       })),
     } : current)
+  }
+
+  const getReviewDeadlineTypeOptions = (type: 'assignment' | 'exam') => {
+    return type === 'exam' ? EXAM_REVIEW_TYPES : ASSIGNMENT_REVIEW_TYPES
   }
 
   const assignmentEvents = parseReview?.events.filter((event) => event.type === 'assignment') ?? []
@@ -286,6 +307,11 @@ export default function SyllabusPage() {
           <input value={event.courseCode ?? ''} onChange={(e) => updateReviewEvent(index, 'courseCode', e.target.value)} placeholder="Course code" />
           <input type="date" value={event.date} onChange={(e) => updateReviewEvent(index, 'date', e.target.value)} />
           <input type="time" value={event.time} onChange={(e) => updateReviewEvent(index, 'time', e.target.value)} />
+          <select value={event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment')} onChange={(e) => updateReviewEvent(index, 'deadlineType', e.target.value)}>
+            {getReviewDeadlineTypeOptions(event.type).map((deadlineType) => (
+              <option key={deadlineType} value={deadlineType}>{formatDeadlineType(deadlineType)}</option>
+            ))}
+          </select>
           <select value={event.priority} onChange={(e) => updateReviewEvent(index, 'priority', e.target.value)}>
             <option value="high">High</option>
             <option value="medium">Medium</option>
@@ -313,7 +339,7 @@ export default function SyllabusPage() {
 
       try {
         setActiveImport({ fileName: file.name, message: 'Reading PDF...', tone: 'info' })
-        const uploadId = (crypto as any)?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
+        const uploadId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
         const parsed = await parseSyllabusPdf(file)
         const reviewDraft: ParseReviewState = {
           uploadId,
@@ -364,6 +390,7 @@ export default function SyllabusPage() {
             date: event.date,
             time: event.time,
             type: event.type,
+            deadlineType: event.deadlineType,
             priority: event.priority,
           })),
         }
@@ -418,7 +445,8 @@ export default function SyllabusPage() {
         (event.courseCode ?? '') === (targetRow.courseCode ?? '') &&
         event.date === targetRow.date &&
         event.time === targetRow.time &&
-        event.type === targetRow.type
+        event.type === targetRow.type &&
+        getStoredEventDeadlineType(event) === (targetRow.deadlineType ?? (targetRow.type === 'exam' ? 'exam' : 'assignment'))
       )
     })
 
@@ -480,7 +508,16 @@ export default function SyllabusPage() {
                           <div className="syllabus-preview-events">
                             {u.parsedEvents.map((event, index) => (
                               <div key={`${event.type}-${event.courseCode ?? ''}-${event.title}-${event.date}-${event.time}-${index}`} className={`syllabus-preview-event ${event.priority}`}>
-                                <span className="syllabus-preview-type">{event.type === 'exam' ? 'Exam' : 'Assignment'}</span>
+                                <span
+                                  className="syllabus-preview-type"
+                                  style={{
+                                    color: DEADLINE_TYPE_COLORS[event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment')],
+                                    background: `${DEADLINE_TYPE_COLORS[event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment')]}22`,
+                                    borderColor: `${DEADLINE_TYPE_COLORS[event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment')]}66`,
+                                  }}
+                                >
+                                  {formatDeadlineType(event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment'))}
+                                </span>
                                 <span>{event.courseCode ? `${event.courseCode} - ${event.title}` : event.title}</span>
                                 <span>{event.date}{event.time ? ` ${event.time}` : ''}</span>
                                 <button type="button" className="syllabus-remove syllabus-preview-remove" onClick={() => removeUploadEventRow(u.id, index)}>Delete</button>
@@ -499,8 +536,8 @@ export default function SyllabusPage() {
       </div>
 
       {parseReview ? (
-        <div className="syllabus-warning-overlay">
-          <div className="syllabus-warning-modal syllabus-review-modal">
+        <div className="syllabus-warning-overlay" onClick={() => closeReview(null)}>
+          <div className="syllabus-warning-modal syllabus-review-modal" onClick={(event) => event.stopPropagation()}>
             <h3>Review Parsed Import</h3>
             <p>
               Check what we found in <strong>{parseReview.fileName}</strong> before importing it into your classes and calendar.
@@ -526,7 +563,12 @@ export default function SyllabusPage() {
               <div className="syllabus-review-grid">
                 <input value={parseReview.course.code} onChange={(e) => updateReviewCourse('code', e.target.value)} placeholder="Course code" />
                 <input value={parseReview.course.title} onChange={(e) => updateReviewCourse('title', e.target.value)} placeholder="Course title" />
-                <input value={parseReview.course.day} onChange={(e) => updateReviewCourse('day', e.target.value)} placeholder="Day" />
+                <select value={parseReview.course.day} onChange={(e) => updateReviewCourse('day', e.target.value)}>
+                  <option value="">Select day</option>
+                  {WEEKDAYS.map((day) => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
+                </select>
                 <input type="time" value={parseReview.course.startTime} onChange={(e) => updateReviewCourse('startTime', e.target.value)} />
                 <input type="time" value={parseReview.course.endTime} onChange={(e) => updateReviewCourse('endTime', e.target.value)} />
                 <input value={parseReview.course.location} onChange={(e) => updateReviewCourse('location', e.target.value)} placeholder="Room / location" />

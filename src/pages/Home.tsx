@@ -4,13 +4,14 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { 
   LayoutDashboard, 
   Calendar, 
-  CheckSquare, 
   FileText, 
-  Bot, 
+  GraduationCap,
   Bell,
   Clock,
   BookOpen,
-  AlertCircle
+  AlertCircle,
+  Upload,
+  FolderKanban
 } from 'lucide-react'
 import { auth } from '../firebase'
 import './Home.css'
@@ -72,32 +73,32 @@ function Home() {
     {
       icon: LayoutDashboard,
       title: 'Dashboard',
-      description: 'Centralized hub for all academic information from Brightspace and Carleton Central.'
+      description: 'See your deadlines, class schedule, and exam snapshot in one place.'
     },
     {
       icon: Calendar,
       title: 'Calendar',
-      description: 'Sync schedules, add assignments, exams, and important dates with smart reminders.'
-    },
-    {
-      icon: CheckSquare,
-      title: 'Tasks',
-      description: 'Track assignments and projects with progress tracking and priority levels.'
+      description: 'Track upcoming and overdue items with editable deadline cards and rich types.'
     },
     {
       icon: FileText,
-      title: 'Notes',
-      description: 'Store lecture notes, create study guides, and share resources with classmates.'
+      title: 'Assignments',
+      description: 'Keep papers, projects, labs, and presentations organized outside the exam list.'
     },
     {
-      icon: Bot,
-      title: 'AI Assistant',
-      description: 'Get instant answers to academic questions with smart chatbot support.'
+      icon: GraduationCap,
+      title: 'Exams',
+      description: 'Separate quizzes, tests, and exams from other coursework so review is clearer.'
     },
     {
-      icon: Bell,
-      title: 'Notifications',
-      description: 'Personalized alerts for deadlines, grade updates, and announcements.'
+      icon: Upload,
+      title: 'Syllabus Import',
+      description: 'Upload a PDF syllabus, review what was parsed, and import it into your calendar.'
+    },
+    {
+      icon: FolderKanban,
+      title: 'Course Info',
+      description: 'Store meeting times, locations, and instructor details for each class slot.'
     }
   ]
 
@@ -178,69 +179,89 @@ function Home() {
               <div className="demo-header">
                 <div className="demo-title">
                   <LayoutDashboard size={18} />
-                  <span>Dashboard</span>
+                  <span>StudentHub</span>
                 </div>
                 <span className="demo-date">Today</span>
               </div>
 
-              <div className="demo-section">
-                <div className="demo-section-title">
-                  <AlertCircle size={14} />
-                  <span>Upcoming Deadlines</span>
+              <div className="demo-summary">
+                <div>
+                  <strong>3 upcoming items.</strong>
+                  <p>2 classes scheduled today and 1 exam this week.</p>
                 </div>
-                <div className="demo-deadlines">
-                  <div className="deadline-item urgent">
-                    <div className="deadline-info">
-                      <span className="deadline-course">COMP 3004</span>
-                      <span className="deadline-task">Assignment 3</span>
-                    </div>
-                    <div className="deadline-meta">
-                      <Clock size={12} />
-                      <span>2 days</span>
-                    </div>
-                  </div>
-                  <div className="deadline-item warning">
-                    <div className="deadline-info">
-                      <span className="deadline-course">SYSC 4001</span>
-                      <span className="deadline-task">Project Report</span>
-                    </div>
-                    <div className="deadline-meta">
-                      <Clock size={12} />
-                      <span>5 days</span>
-                    </div>
-                  </div>
+                <div className="demo-summary-count">
+                  <span>3</span>
+                  <small>Open</small>
                 </div>
               </div>
 
-              <div className="demo-section">
-                <div className="demo-section-title">
-                  <BookOpen size={14} />
-                  <span>Today's Classes</span>
-                </div>
-                <div className="demo-classes">
-                  <div className="class-item">
-                    <span className="class-time">10:00 AM</span>
-                    <span className="class-name">COMP 3004 - Lecture</span>
+              <div className="demo-grid">
+                <div className="demo-section">
+                  <div className="demo-section-title deadlines">
+                    <AlertCircle size={14} />
+                    <span>Upcoming Deadlines</span>
                   </div>
-                  <div className="class-item">
-                    <span className="class-time">2:00 PM</span>
-                    <span className="class-name">SYSC 4001 - Tutorial</span>
+                  <div className="demo-deadlines">
+                    <div className="deadline-item urgent">
+                      <div className="deadline-info">
+                        <span className="deadline-course">COMP 3004</span>
+                        <span className="deadline-task">Research Paper Draft</span>
+                        <span className="deadline-chip assignment">Assignment</span>
+                      </div>
+                      <div className="deadline-meta">
+                        <Clock size={12} />
+                        <span>2 days</span>
+                      </div>
+                    </div>
+                    <div className="deadline-item warning">
+                      <div className="deadline-info">
+                        <span className="deadline-course">PSYC 2002</span>
+                        <span className="deadline-task">Pre-final Presentation</span>
+                        <span className="deadline-chip presentation">Presentation</span>
+                      </div>
+                      <div className="deadline-meta">
+                        <Clock size={12} />
+                        <span>4 days</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="demo-footer">
-                <div className="demo-stat">
-                  <span className="stat-value">4</span>
-                  <span className="stat-label">Tasks</span>
+                <div className="demo-section">
+                  <div className="demo-section-title classes">
+                    <BookOpen size={14} />
+                    <span>Today's Classes</span>
+                  </div>
+                  <div className="demo-classes">
+                    <div className="class-item">
+                      <span className="class-time">10:00 AM</span>
+                      <span className="class-name">COMP 3004 - Azrieli Theatre</span>
+                    </div>
+                    <div className="class-item">
+                      <span className="class-time">2:00 PM</span>
+                      <span className="class-name">PSYC 2002 - Loeb B146</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="demo-stat">
-                  <span className="stat-value">2</span>
-                  <span className="stat-label">Classes</span>
-                </div>
-                <div className="demo-stat">
-                  <span className="stat-value">1</span>
-                  <span className="stat-label">Exam</span>
+
+                <div className="demo-section">
+                  <div className="demo-section-title exams">
+                    <Bell size={14} />
+                    <span>Upcoming Exams</span>
+                  </div>
+                  <div className="demo-deadlines">
+                    <div className="deadline-item warning">
+                      <div className="deadline-info">
+                        <span className="deadline-course">STAT 2507</span>
+                        <span className="deadline-task">Quiz 4</span>
+                        <span className="deadline-chip exam">Quiz</span>
+                      </div>
+                      <div className="deadline-meta">
+                        <Clock size={12} />
+                        <span>6 days</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { doc, onSnapshot, setDoc, type Unsubscribe } from 'firebase/firestore'
 import { db } from './firebase'
+import { normalizeDeadlineType, type DeadlineType } from './deadlines'
 
 export interface StoredCalendarEvent {
   title: string
@@ -8,6 +9,7 @@ export interface StoredCalendarEvent {
   time: string
   priority: 'high' | 'medium' | 'low'
   type: 'assignment' | 'exam'
+  deadlineType?: DeadlineType
   sourceUploadId?: string
 }
 
@@ -52,6 +54,7 @@ export interface StoredSyllabusUpload {
     date: string
     time: string
     type: 'assignment' | 'exam'
+    deadlineType?: DeadlineType
     priority: 'high' | 'medium' | 'low'
   }>
 }
@@ -76,6 +79,7 @@ function normalizeCalendarEvent(event: Partial<StoredCalendarEvent>): StoredCale
     time: event.time ?? '',
     priority: event.priority === 'medium' || event.priority === 'low' ? event.priority : 'high',
     type: event.type === 'exam' ? 'exam' : 'assignment',
+    deadlineType: normalizeDeadlineType(event.deadlineType, event.type === 'exam' ? 'exam' : 'assignment'),
     sourceUploadId: event.sourceUploadId ?? '',
   }
 }
@@ -127,6 +131,7 @@ function normalizeUpload(upload: Partial<StoredSyllabusUpload>): StoredSyllabusU
           date: event.date ?? '',
           time: event.time ?? '',
           type: event.type === 'exam' ? 'exam' : 'assignment',
+          deadlineType: normalizeDeadlineType(event.deadlineType, event.type === 'exam' ? 'exam' : 'assignment'),
           priority: event.priority === 'medium' || event.priority === 'low' ? event.priority : 'high',
         }))
       : [],
