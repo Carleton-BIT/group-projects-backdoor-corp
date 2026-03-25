@@ -17,7 +17,9 @@ import { parseSyllabusPdf, type ParsedSyllabusData } from '../syllabusParser'
 import {
   DEADLINE_TYPE_COLORS,
   deadlineTypeToEventType,
+  formatCountdown,
   formatDeadlineType,
+  getDaysUntil,
   getStoredEventDeadlineType,
   normalizeDeadlineType,
   isSameCalendarEvent,
@@ -48,6 +50,7 @@ export default function SyllabusPage() {
   const [events, setEvents] = useState<StoredCalendarEvent[]>([])
   const [parseReview, setParseReview] = useState<ParseReviewState | null>(null)
   const [activeImport, setActiveImport] = useState<{ fileName: string; message: string; tone: 'info' | 'error' } | null>(null)
+  const [collapsedUploads, setCollapsedUploads] = useState<Set<string>>(new Set())
   const uploadsRef = useRef<StoredSyllabusUpload[]>([])
   const reviewResolverRef = useRef<((value: ParseReviewState | null) => void) | null>(null)
 
@@ -117,8 +120,14 @@ export default function SyllabusPage() {
     const next = [...current]
     for (const event of incoming) {
       const normalizedEvent = { ...event, sourceUploadId }
-      const exists = next.some((item) => isSameCalendarEvent(item, normalizedEvent) && item.sourceUploadId === sourceUploadId)
-      if (!exists) next.push(normalizedEvent)
+      const isDuplicateInSameUpload = next.some((item) => isSameCalendarEvent(item, normalizedEvent) && item.sourceUploadId === sourceUploadId)
+      const isDuplicateInOtherUpload = next.some((item) => 
+        item.title === event.title &&
+        (item.courseCode ?? '') === (event.courseCode ?? '') &&
+        item.date === event.date &&
+        item.time === event.time
+      )
+      if (!isDuplicateInSameUpload && !isDuplicateInOtherUpload) next.push(normalizedEvent)
     }
     return next
   }
@@ -328,78 +337,120 @@ export default function SyllabusPage() {
     if (!filesList || filesList.length === 0 || !uid || !uploadsReady) return
 
     const files = Array.from(filesList)
-    let nextClasses = classes
-    let nextEvents = events
 
     for (const file of files) {
-      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-        setActiveImport({ fileName: file.name, message: 'Only PDF files are accepted.', tone: 'error' })
-        continue
+      // Check for duplicate file name
+      const existingUpload = uploadsRef.current.find((u) => u.name === file.name)
+      if (existingUpload) {
+        setDuplicateFileTarget({ newFile: file, existingUploadId: existingUpload.id })
+        return // Wait for user confirmation
       }
 
-      try {
-        setActiveImport({ fileName: file.name, message: 'Reading PDF...', tone: 'info' })
-        const uploadId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
-        const parsed = await parseSyllabusPdf(file)
-        const reviewDraft: ParseReviewState = {
-          uploadId,
-          fileName: file.name,
-          course: toReviewCourse(parsed.course),
-          events: toReviewEvents(parsed.events),
-          missing: getMissingFields(parsed),
-          source: parsed.source,
-        }
+      await processSingleFile(uid, file)
+    }
+  }
 
-        setActiveImport({
-          fileName: file.name,
-          message: parsed.source === 'remote-ai'
-            ? 'AI parsed this PDF. Review the extracted info before import.'
-            : 'Using local fallback parsing. Review the extracted info before import.',
-          tone: 'info',
-        })
-        const reviewed = await confirmParsedImport(reviewDraft)
-        if (!reviewed) {
-          setActiveImport({ fileName: file.name, message: 'Import cancelled before confirmation.', tone: 'error' })
-          continue
-        }
+  const handleDuplicateFileConfirmation = async (action: 'replace' | 'skip') => {
+    const uid = auth.currentUser?.uid
+    if (!uid || !duplicateFileTarget) return
 
-        nextClasses = mergeClass(nextClasses, {
-          ...reviewed.course,
-          time: [reviewed.course.startTime, reviewed.course.endTime].filter(Boolean).join(' - '),
-        }, uploadId)
-        nextEvents = mergeEvents(nextEvents, reviewed.events, uploadId)
-        await saveClasses(uid, nextClasses)
-        await saveCalendarEvents(uid, nextEvents)
+    if (action === 'replace') {
+      const newFile = duplicateFileTarget.newFile
+      const oldUploadId = duplicateFileTarget.existingUploadId
+      setDuplicateFileTarget(null)
+      await processSingleFile(uid, newFile, oldUploadId)
+    } else {
+      // Skip this file
+      setDuplicateFileTarget(null)
+    }
+  }
 
-        const summary = [
-          reviewed.course.code || reviewed.course.title ? 'course info' : '',
-          reviewed.events.length ? `${reviewed.events.length} dates` : '',
-        ].filter(Boolean).join(', ')
+  const processSingleFile = async (uid: string, file: File, oldUploadIdToReplace?: string) => {
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setActiveImport({ fileName: file.name, message: 'Only PDF files are accepted.', tone: 'error' })
+      return
+    }
 
-        const nextUpload: StoredSyllabusUpload = {
-          id: uploadId,
-          name: file.name,
-          url: '',
-          storagePath: '',
-          status: 'done',
-          message: summary ? `Imported ${summary}.` : 'Parsed PDF, but found limited structured data.',
-          parsedCourse: reviewed.course,
-          parsedEvents: reviewed.events.map((event) => ({
-            title: event.title,
-            courseCode: event.courseCode ?? '',
-            date: event.date,
-            time: event.time,
-            type: event.type,
-            deadlineType: event.deadlineType,
-            priority: event.priority,
-          })),
-        }
-
-        await saveUploadsList(uid, [nextUpload, ...uploadsRef.current])
-        setActiveImport(null)
-      } catch {
-        setActiveImport({ fileName: file.name, message: 'Could not parse or save this PDF syllabus.', tone: 'error' })
+    try {
+      setActiveImport({ fileName: file.name, message: 'Reading PDF...', tone: 'info' })
+      const uploadId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
+      const parsed = await parseSyllabusPdf(file)
+      const reviewDraft: ParseReviewState = {
+        uploadId,
+        fileName: file.name,
+        course: toReviewCourse(parsed.course),
+        events: toReviewEvents(parsed.events),
+        missing: getMissingFields(parsed),
+        source: parsed.source,
       }
+
+      setActiveImport({
+        fileName: file.name,
+        message: parsed.source === 'remote-ai'
+          ? 'AI parsed this PDF. Review the extracted info before import.'
+          : 'Using local fallback parsing. Review the extracted info before import.',
+        tone: 'info',
+      })
+      const reviewed = await confirmParsedImport(reviewDraft)
+      if (!reviewed) {
+        setActiveImport({ fileName: file.name, message: 'Import cancelled before confirmation.', tone: 'error' })
+        return
+      }
+
+      // Start with current data
+      let workingClasses = classes
+      let workingEvents = events
+      let workingUploads = uploadsRef.current
+
+      // Delete old upload if this is a replacement
+      if (oldUploadIdToReplace) {
+        workingUploads = workingUploads.filter((u) => u.id !== oldUploadIdToReplace)
+        workingClasses = normalizeToSixClasses(workingClasses.filter((c) => c.sourceUploadId !== oldUploadIdToReplace))
+        workingEvents = workingEvents.filter((e) => e.sourceUploadId !== oldUploadIdToReplace)
+      }
+
+      // Merge new course info
+      workingClasses = mergeClass(workingClasses, {
+        ...reviewed.course,
+        time: [reviewed.course.startTime, reviewed.course.endTime].filter(Boolean).join(' - '),
+      }, uploadId)
+      
+      // Merge new events
+      workingEvents = mergeEvents(workingEvents, reviewed.events, uploadId)
+
+      const summary = [
+        reviewed.course.code || reviewed.course.title ? 'course info' : '',
+        reviewed.events.length ? `${reviewed.events.length} dates` : '',
+      ].filter(Boolean).join(', ')
+
+      const nextUpload: StoredSyllabusUpload = {
+        id: uploadId,
+        name: file.name,
+        url: '',
+        storagePath: '',
+        status: 'done',
+        message: summary ? `Imported ${summary}.` : 'Parsed PDF, but found limited structured data.',
+        parsedCourse: reviewed.course,
+        parsedEvents: reviewed.events.map((event) => ({
+          title: event.title,
+          courseCode: event.courseCode ?? '',
+          date: event.date,
+          time: event.time,
+          type: event.type,
+          deadlineType: event.deadlineType,
+          priority: event.priority,
+        })),
+      }
+
+      // Save everything together
+      workingUploads = [nextUpload, ...workingUploads]
+      await saveClasses(uid, workingClasses)
+      await saveCalendarEvents(uid, workingEvents)
+      await saveUploadsList(uid, workingUploads)
+
+      setActiveImport(null)
+    } catch {
+      setActiveImport({ fileName: file.name, message: 'Could not parse or save this PDF syllabus.', tone: 'error' })
     }
   }
 
@@ -424,6 +475,50 @@ export default function SyllabusPage() {
     await saveClasses(uid, nextClasses)
     await saveCalendarEvents(uid, nextEvents)
     await saveSyllabusUploads(uid, nextUploads)
+  }
+
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<null | {
+    mode: 'upload' | 'event'
+    uploadId: string
+    rowIndex?: number
+  }>(null)
+  const [duplicateFileTarget, setDuplicateFileTarget] = useState<null | {
+    newFile: File
+    existingUploadId: string
+  }>(null)
+
+  const confirmAndRemoveUpload = (id: string) => {
+    setDeleteConfirmTarget({ mode: 'upload', uploadId: id })
+  }
+
+  const confirmAndRemoveUploadEventRow = (uploadId: string, rowIndex: number) => {
+    setDeleteConfirmTarget({ mode: 'event', uploadId, rowIndex })
+  }
+
+  const cancelDeleteConfirmation = () => {
+    setDeleteConfirmTarget(null)
+  }
+
+  const toggleCollapseUpload = (uploadId: string) => {
+    setCollapsedUploads((prev) => {
+      const next = new Set(prev)
+      if (next.has(uploadId)) next.delete(uploadId)
+      else next.add(uploadId)
+      return next
+    })
+  }
+
+
+  const performDeleteConfirmed = async () => {
+    if (!deleteConfirmTarget) return
+
+    if (deleteConfirmTarget.mode === 'upload') {
+      await removeUpload(deleteConfirmTarget.uploadId)
+    } else if (deleteConfirmTarget.mode === 'event' && deleteConfirmTarget.rowIndex !== undefined) {
+      await removeUploadEventRow(deleteConfirmTarget.uploadId, deleteConfirmTarget.rowIndex)
+    }
+
+    setDeleteConfirmTarget(null)
   }
 
   const removeUploadEventRow = async (uploadId: string, rowIndex: number) => {
@@ -493,36 +588,43 @@ export default function SyllabusPage() {
             <div className="syllabus-list">
               {uploads.map((u) => (
                 <div className="syllabus-item" key={u.id}>
-                  <div className="syllabus-item-body">
+                  <div className="syllabus-item-body" onClick={() => toggleCollapseUpload(u.id)}>
                     <div className="syllabus-item-info">
-                      <span className="syllabus-name">{u.name}</span>
-                      <span className={`syllabus-status syllabus-status-${u.status}`}>{u.message}</span>
-                      <button type="button" className="syllabus-remove syllabus-item-delete" onClick={() => removeUpload(u.id)}>Delete Upload</button>
+                      <div className="syllabus-item-toggle">
+                        <span className="syllabus-name">{u.name}</span>
+                        <span className={`syllabus-status syllabus-status-${u.status}`}>{u.message}</span>
+                      </div>
+                      <button type="button" className="syllabus-remove syllabus-item-delete" onClick={(event) => { event.stopPropagation(); void confirmAndRemoveUpload(u.id) }}>Delete Upload</button>
                     </div>
-                    {u.parsedCourse || (u.parsedEvents && u.parsedEvents.length > 0) ? (
+                    {!collapsedUploads.has(u.id) && (u.parsedCourse || (u.parsedEvents && u.parsedEvents.length > 0)) ? (
                       <div className="syllabus-preview">
                         {summarizeCourse(u.parsedCourse).map((line) => (
                           <div key={line} className="syllabus-preview-line">{line}</div>
                         ))}
                         {u.parsedEvents && u.parsedEvents.length > 0 ? (
                           <div className="syllabus-preview-events">
-                            {u.parsedEvents.map((event, index) => (
-                              <div key={`${event.type}-${event.courseCode ?? ''}-${event.title}-${event.date}-${event.time}-${index}`} className={`syllabus-preview-event ${event.priority}`}>
-                                <span
-                                  className="syllabus-preview-type"
-                                  style={{
-                                    color: DEADLINE_TYPE_COLORS[event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment')],
-                                    background: `${DEADLINE_TYPE_COLORS[event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment')]}22`,
-                                    borderColor: `${DEADLINE_TYPE_COLORS[event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment')]}66`,
-                                  }}
-                                >
-                                  {formatDeadlineType(event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment'))}
-                                </span>
-                                <span>{event.courseCode ? `${event.courseCode} - ${event.title}` : event.title}</span>
-                                <span>{event.date}{event.time ? ` ${event.time}` : ''}</span>
-                                <button type="button" className="syllabus-remove syllabus-preview-remove" onClick={() => removeUploadEventRow(u.id, index)}>Delete</button>
-                              </div>
-                            ))}
+                            {u.parsedEvents.map((event, index) => {
+                              const isOverdue = getDaysUntil(event.date) < 0
+                              return (
+                                <div key={`${event.type}-${event.courseCode ?? ''}-${event.title}-${event.date}-${event.time}-${index}`} className={`syllabus-preview-event ${event.priority} ${isOverdue ? 'overdue' : ''}`}>
+                                  <span
+                                    className="syllabus-preview-type"
+                                    style={{
+                                      color: DEADLINE_TYPE_COLORS[event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment')],
+                                      background: `${DEADLINE_TYPE_COLORS[event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment')]}22`,
+                                      borderColor: `${DEADLINE_TYPE_COLORS[event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment')]}66`,
+                                    }}
+                                  >
+                                    {formatDeadlineType(event.deadlineType ?? (event.type === 'exam' ? 'exam' : 'assignment'))}
+                                  </span>
+                                  <span>{event.courseCode ? `${event.courseCode} - ${event.title}` : event.title}</span>
+                                  <span>
+                                    {`${event.date}${event.time ? ` | ${event.time}` : ''} (${formatCountdown(event.date)})`}
+                                  </span>
+                                  <button type="button" className="syllabus-remove syllabus-preview-remove" onClick={(event) => { event.stopPropagation(); void confirmAndRemoveUploadEventRow(u.id, index) }}>Delete</button>
+                                </div>
+                              )
+                            })}
                           </div>
                         ) : null}
                       </div>
@@ -534,6 +636,35 @@ export default function SyllabusPage() {
           </>
         )}
       </div>
+
+      {deleteConfirmTarget ? (
+        <div className="syllabus-warning-overlay" onClick={cancelDeleteConfirmation}>
+          <div className="syllabus-warning-modal" onClick={(event) => event.stopPropagation()}>
+            <h3>Confirm Deletion</h3>
+            <p>{deleteConfirmTarget.mode === 'upload'
+              ? 'Are you sure you want to delete this syllabus upload and all associated events? This action cannot be undone.'
+              : 'Are you sure you want to delete this event from the upload?'}
+            </p>
+            <div className="syllabus-warning-actions">
+              <button className="cancel-btn" onClick={cancelDeleteConfirmation}>Cancel</button>
+              <button className="save-btn" onClick={performDeleteConfirmed}>Delete</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {duplicateFileTarget ? (
+        <div className="syllabus-warning-overlay" onClick={() => setDuplicateFileTarget(null)}>
+          <div className="syllabus-warning-modal" onClick={(event) => event.stopPropagation()}>
+            <h3>File Already Uploaded</h3>
+            <p>The file "<strong>{duplicateFileTarget.newFile.name}</strong>" is already in your uploads. Would you like to replace it?</p>
+            <div className="syllabus-warning-actions">
+              <button className="cancel-btn" onClick={() => handleDuplicateFileConfirmation('skip')}>Skip</button>
+              <button className="save-btn" onClick={() => handleDuplicateFileConfirmation('replace')}>Replace</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {parseReview ? (
         <div className="syllabus-warning-overlay" onClick={() => closeReview(null)}>

@@ -144,6 +144,17 @@
 .syllabus-preview-event.high { border-left: 3px solid var(--red); }
 .syllabus-preview-event.medium { border-left: 3px solid var(--orange); }
 .syllabus-preview-event.low { border-left: 3px solid #10B981; }
+.syllabus-preview-event.overdue { opacity: 0.84; }
+.syllabus-preview-event.overdue {
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(161, 161, 170, 0.12) 0,
+      rgba(161, 161, 170, 0.12) 10px,
+      rgba(255, 255, 255, 0.03) 10px,
+      rgba(255, 255, 255, 0.03) 20px
+    );
+}
 .syllabus-preview-type {
   display: inline-flex;
   align-items: center;
@@ -158,6 +169,9 @@
   letter-spacing: 0.04em;
 }
 .syllabus-preview-remove { margin-left: auto; }
+.syllabus-item-toggle { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; }
+.syllabus-item-toggle:hover { opacity: 0.9; }
+.syllabus-btn-collapse { display: none; }
 .syllabus-warning-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.78); display: flex; align-items: center; justify-content: center; z-index: 200; }
 .syllabus-warning-modal { width: min(92vw,460px); padding: 1.25rem; border-radius: 16px; background: var(--bg-1); border: 1px solid var(--border-hover); box-shadow: 0 24px 80px rgba(0,0,0,0.45); }
 .syllabus-warning-modal h3 { margin: 0 0 0.75rem; }
