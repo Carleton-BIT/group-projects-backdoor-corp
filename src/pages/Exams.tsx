@@ -2,7 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth } from '../firebase'
 import { saveCalendarEvents, subscribeToCalendarEvents, type StoredCalendarEvent } from '../storage'
-import { DEADLINE_TYPE_COLORS, formatCountdown, formatDeadlineType, getDaysUntil, getStoredEventDeadlineType, isExamLikeDeadlineType, isSameCalendarEvent } from '../deadlines'
+import { 
+  DEADLINE_TYPE_COLORS, 
+  formatCountdown, 
+  formatDeadlineType, 
+  getDaysUntil, 
+  getStoredEventDeadlineType, 
+  isExamLikeDeadlineType, 
+  isSameCalendarEvent 
+} from '../deadlines'
 import './ItemsPage.css'
 
 function Exams() {
@@ -32,6 +40,10 @@ function Exams() {
     navigate('/calendar', { state: { newDeadlineType: 'exam' as const } })
   }
 
+  const handleViewCarletonSchedule = () => {
+    window.open('https://carleton.ca/ses/examination-services/exam-schedule/', '_blank', 'noopener,noreferrer')
+  }
+
   const handleRemove = async (targetEvent: StoredCalendarEvent) => {
     const uid = auth.currentUser?.uid
     if (!uid) return
@@ -49,7 +61,9 @@ function Exams() {
           <h1>Exams</h1>
           <p>Exams, tests, and quizzes synced from your calendar and syllabus uploads.</p>
         </div>
-        <button className="items-add" onClick={handleAddExam}>+ Add Exam</button>
+        <div className="header-actions">
+          <button className="items-add" onClick={handleAddExam}>+ Add Exam</button>
+        </div>
       </header>
 
       <div className="items-list">
@@ -57,7 +71,7 @@ function Exams() {
           <p className="items-empty">No exam-style deadlines yet. Add one from Calendar or Upcoming Deadlines.</p>
         ) : (
           <>
-            {upcomingExams.length > 0 ? (
+            {upcomingExams.length > 0 && (
               <section className="items-group">
                 <div className="items-group-label">Upcoming</div>
                 {upcomingExams.map((event) => {
@@ -86,9 +100,9 @@ function Exams() {
                   )
                 })}
               </section>
-            ) : null}
+            )}
 
-            {overdueExams.length > 0 ? (
+            {overdueExams.length > 0 && (
               <section className="items-group">
                 <div className="items-group-label overdue">Overdue</div>
                 {overdueExams.map((event) => {
@@ -117,10 +131,18 @@ function Exams() {
                   )
                 })}
               </section>
-            ) : null}
+            )}
           </>
         )}
       </div>
+
+      {/* Floating Redirect Button */}
+      <button 
+        className="items-external-floating" 
+        onClick={handleViewCarletonSchedule}
+      >
+        Official Schedule ↗
+      </button>
     </div>
   )
 }
