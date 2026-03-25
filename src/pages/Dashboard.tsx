@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { CalendarDays, Calendar, FileText, GraduationCap, Bell, Clock, LayoutDashboard, AlertCircle, BookOpen } from 'lucide-react'
@@ -16,10 +16,62 @@ import './Dashboard.css'
 
 const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
+interface AppNotification {
+  id: string
+  type: 'assignment' | 'exam'
+  title: string
+  courseCode?: string
+  date: string
+  message: string
+}
+
+function buildNotifications(events: StoredCalendarEvent[]): AppNotification[] {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const notifications: AppNotification[] = []
+
+  for (const ev of events) {
+    const eventDate = new Date(`${ev.date}T00:00:00`)
+    if (Number.isNaN(eventDate.getTime())) continue
+    const diffDays = Math.round((eventDate.getTime() - today.getTime()) / 86400000)
+    const deadlineType = getStoredEventDeadlineType(ev)
+    const typeLabel = formatDeadlineType(deadlineType)
+    const prefix = ev.courseCode ? `${ev.courseCode} — ` : ''
+
+    if (!isExamLikeDeadlineType(deadlineType) && diffDays === 2) {
+      notifications.push({
+        id: `assignment-${ev.date}-${ev.title}`,
+        type: 'assignment',
+        title: ev.title,
+        courseCode: ev.courseCode,
+        date: ev.date,
+        message: `${prefix}${typeLabel}: ${ev.title} is due in 2 days.`,
+      })
+    }
+
+    if (isExamLikeDeadlineType(deadlineType) && diffDays === 7) {
+      notifications.push({
+        id: `exam-${ev.date}-${ev.title}`,
+        type: 'exam',
+        title: ev.title,
+        courseCode: ev.courseCode,
+        date: ev.date,
+        message: `${prefix}${typeLabel}: ${ev.title} is in 1 week.`,
+      })
+    }
+  }
+
+  notifications.sort((a, b) => b.date.localeCompare(a.date))
+  return notifications
+}
+
 function Dashboard() {
   const navigate = useNavigate()
   const [calendarEvents, setCalendarEvents] = useState<StoredCalendarEvent[]>([])
   const [classes, setClasses] = useState<StoredClassInfo[]>([])
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [seenIds, setSeenIds] = useState<Set<string>>(new Set())
+  const notifRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const uid = auth.currentUser?.uid
@@ -29,7 +81,40 @@ function Dashboard() {
     return () => { unsubscribeCalendar(); unsubscribeClasses() }
   }, [])
 
-  const handleLogout = async () => { await signOut(auth); navigate('/', { replace: true }) }
+  useEffect(() => {
+    if (!notifOpen) return
+      const handler = (e: MouseEvent) => {
+        if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+          setNotifOpen(false)
+        }
+      }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [notifOpen])
+
+  useEffect(() => {
+    const saved = localStorage.getItem('seen_notifications')
+    if (saved) {
+      setSeenIds(new Set(JSON.parse(saved)))
+    }
+  }, [])
+
+  const handleLogout = async () => {
+    await signOut(auth)
+    navigate('/', { replace: true })
+  }
+
+  const handleBellClick = () => {
+    if (!notifOpen) {
+      // Create a copy of existing seen IDs + all current notification IDs
+      const currentIds = notifications.map((n) => n.id)
+      const newSeen = new Set([...Array.from(seenIds), ...currentIds])
+      
+      setSeenIds(newSeen)
+      localStorage.setItem('seen_notifications', JSON.stringify(Array.from(newSeen)))
+    }
+    setNotifOpen((prev) => !prev)
+  }
 
   const allUpcomingEvents = useMemo(() => {
     const today = new Date()
@@ -85,6 +170,13 @@ function Dashboard() {
     return (matchingCurrentTermClasses.length > 0 ? matchingCurrentTermClasses : todaysClasses).slice(0, 4)
   }, [activeCourseCodes, classes])
 
+  const notifications = useMemo(() => buildNotifications(calendarEvents), [calendarEvents])
+
+  const hasUnread = useMemo(
+    () => notifications.some((n) => !seenIds.has(n.id)),
+    [notifications, seenIds]
+  )
+
   const features = [
     { icon: CalendarDays, title: 'Class Information', desc: 'View and manage your course info', path: '/course-info' },
     { icon: Calendar, title: 'Calendar', desc: 'Personalized schedule', path: '/calendar' },
@@ -112,7 +204,50 @@ function Dashboard() {
           <h2>Welcome to Your Dashboard</h2>
           <div className="title-actions">
             <button className="btn-syllabus-top" onClick={() => navigate('/syllabus')}>Add Syllabus</button>
-            <button className="btn-notify"><Bell size={26} strokeWidth={1.5} /></button>
+            <div className="notif-wrapper" ref={notifRef}>
+            <button
+              className={`btn-notify${notifOpen ? ' btn-notify--open' : ''}`}
+              onClick={handleBellClick}
+              aria-label="Notifications"
+            >
+              <Bell size={26} strokeWidth={1.5} />
+              {hasUnread && <span className="notif-badge" />}
+            </button>
+
+              {notifOpen && (
+                <div className="notif-panel">
+                  <div className="notif-panel-header">
+                    <span className="notif-panel-title">Notifications</span>
+                    <span className="notif-panel-count">{notifications.length}</span>
+                  </div>
+                  <div className="notif-panel-list">
+                    {notifications.length === 0 ? (
+                      <div className="notif-empty">
+                        <Bell size={28} strokeWidth={1.2} />
+                        <p>No notifications right now.</p>
+                        <p className="notif-empty-sub">We'll alert you when assignments or exams are coming up.</p>
+                      </div>
+                    ) : (
+                      notifications.map((n) => (
+                        <div key={n.id} className={`notif-item notif-item--${n.type}`}>
+                          <div className="notif-item-icon">
+                            {n.type === 'assignment'
+                              ? <FileText size={15} strokeWidth={1.8} />
+                              : <GraduationCap size={15} strokeWidth={1.8} />}
+                          </div>
+                          <div className="notif-item-body">
+                            <p className="notif-item-msg">{n.message}</p>
+                            <span className="notif-item-sub">
+                              {n.type === 'assignment' ? 'Due in 2 days' : 'Exam in 1 week'} · {n.date}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <p className="subtitle">Your home for all things student life!</p>
