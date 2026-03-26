@@ -209,7 +209,7 @@ src/
 
 ## Screenshots
 
-![Dashboard Screenshot]([./CUHUB%20Dashboard%20Screenshot.jpeg](https://github.com/Carleton-BIT/group-projects-backdoor-corp/blob/5e24e02c9c2745bcf076780c2c917a8c8efc028b/CUHUB%20Dashboard%20Screenshot.png))
+![image_alt](https://github.com/Carleton-BIT/group-projects-backdoor-corp/blob/cc3c50a83c5d8a6fd4506dd9944b97dcd3f8902d/CUHUB%20Dashboard%20Screenshot.jpg)
 
 ---
 
