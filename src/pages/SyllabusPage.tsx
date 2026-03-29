@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth } from '../firebase'
+import examScheduleJson from '../examSchedule.JSON?raw'
 import {
   getDefaultClasses,
   saveCalendarEvents,
@@ -41,6 +42,103 @@ type ParseReviewState = {
 const ASSIGNMENT_REVIEW_TYPES: DeadlineType[] = ['assignment', 'presentation', 'project', 'lab-report', 'other']
 const EXAM_REVIEW_TYPES: DeadlineType[] = ['quiz', 'test', 'exam']
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+type PrefilledExamRow = {
+  dept: string
+  courseCode: string
+  course: string
+  section: string
+  date: string
+  time: string
+  endDate: string
+  endTime: string
+  durationMins: number
+  location: string
+  availability: string
+  type: 'exam'
+}
+
+const PREFILLED_EXAMS = JSON.parse(examScheduleJson) as PrefilledExamRow[]
+
+function normalizeCourseCode(value: string | undefined) {
+  return (value ?? '').replace(/[^a-z0-9]/gi, '').toUpperCase()
+}
+
+function extractCourseCodeVariants(value: string | undefined) {
+  const rawValue = value ?? ''
+  const explicitMatches = rawValue.match(/[A-Z]{3,5}\s?-?\d{4}[A-Z]?/gi) ?? []
+  const normalizedMatches = explicitMatches.map((match) => normalizeCourseCode(match)).filter(Boolean)
+
+  if (normalizedMatches.length > 0) {
+    return Array.from(new Set(normalizedMatches))
+  }
+
+  const normalizedValue = normalizeCourseCode(rawValue)
+  return normalizedValue ? [normalizedValue] : []
+}
+
+function buildExamTitle(courseCode: string, location: string) {
+  const baseTitle = courseCode ? `${courseCode} Final Exam` : 'Final Exam'
+  return location ? `${baseTitle} (${location})` : baseTitle
+}
+
+function isFinalExamLikeEvent(event: ReviewEvent) {
+  if (event.type !== 'exam') return false
+
+  const normalizedTitle = event.title.toLowerCase()
+  if (/\bmidterm\b|\bquiz\b|\btest\b/.test(normalizedTitle)) return false
+  if (/\bfinal\b|\bexam\b/.test(normalizedTitle)) return true
+
+  return event.deadlineType === 'exam'
+}
+
+function mergePrefilledExamEvents(courseCode: string, existingEvents: ReviewEvent[]) {
+  const normalizedCourseCodes = extractCourseCodeVariants(courseCode)
+  if (normalizedCourseCodes.length === 0) return existingEvents
+
+  const matchingRows = PREFILLED_EXAMS.filter((row) => normalizedCourseCodes.includes(normalizeCourseCode(row.courseCode)))
+  if (matchingRows.length === 0) return existingEvents
+
+  const uniqueSchedules = Array.from(
+    new Map(
+      matchingRows.map((row) => [
+        [row.date, row.time, row.endDate, row.endTime, row.location].join('|'),
+        row,
+      ]),
+    ).values(),
+  )
+
+  // Without syllabus section data, only auto-add prefilled exams when the course has one unique exam slot.
+  if (uniqueSchedules.length !== 1) return existingEvents
+
+  const [row] = uniqueSchedules
+  const title = buildExamTitle(courseCode, row.location)
+
+  const alreadyExists = existingEvents.some((event) =>
+    event.type === 'exam' &&
+    extractCourseCodeVariants(event.courseCode).some((eventCode) => normalizedCourseCodes.includes(eventCode)) &&
+    event.date === row.date &&
+    event.time === row.time,
+  )
+  if (alreadyExists) return existingEvents
+
+  const filteredEvents = existingEvents.filter((event) => {
+    if (!extractCourseCodeVariants(event.courseCode).some((eventCode) => normalizedCourseCodes.includes(eventCode))) return true
+    return !isFinalExamLikeEvent(event)
+  })
+
+  const prefilledExamEvent: ReviewEvent = {
+    title,
+    courseCode,
+    date: row.date,
+    time: row.time,
+    type: 'exam',
+    deadlineType: 'exam',
+    priority: 'high',
+  }
+
+  return [...filteredEvents, prefilledExamEvent]
+}
 
 export default function SyllabusPage() {
   const navigate = useNavigate()
@@ -174,21 +272,6 @@ export default function SyllabusPage() {
       course.profName || course.profEmail ? `Prof: ${[course.profName, course.profEmail].filter(Boolean).join(' | ')}` : '',
       course.taName || course.taEmail ? `TA: ${[course.taName, course.taEmail].filter(Boolean).join(' | ')}` : '',
     ].filter(Boolean)
-  }
-
-  const getMissingFields = (parsed: ParsedSyllabusData) => {
-    const missing: string[] = []
-
-    if (!parsed.course.title && !parsed.course.code) missing.push('course name/code')
-    if (!parsed.course.day && !parsed.course.startTime && !parsed.course.endTime) missing.push('class day/time')
-    if (!parsed.course.profName) missing.push('professor name')
-    if (!parsed.course.profEmail) missing.push('professor email')
-    if (!parsed.course.taName) missing.push('TA name')
-    if (!parsed.course.taEmail) missing.push('TA email')
-    if (!parsed.events.some((event) => event.type === 'assignment')) missing.push('assignment dates')
-    if (!parsed.events.some((event) => event.type === 'exam')) missing.push('exam dates')
-
-    return missing
   }
 
   const getReviewMissingFields = (review: Pick<ParseReviewState, 'course' | 'events'>) => {
@@ -375,12 +458,17 @@ export default function SyllabusPage() {
       setActiveImport({ fileName: file.name, message: 'Reading PDF...', tone: 'info' })
       const uploadId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
       const parsed = await parseSyllabusPdf(file)
+      const parsedEvents = toReviewEvents(parsed.events)
+      const reviewEvents = mergePrefilledExamEvents(parsed.course.code ?? '', parsedEvents)
       const reviewDraft: ParseReviewState = {
         uploadId,
         fileName: file.name,
         course: toReviewCourse(parsed.course),
-        events: toReviewEvents(parsed.events),
-        missing: getMissingFields(parsed),
+        events: reviewEvents,
+        missing: getReviewMissingFields({
+          course: toReviewCourse(parsed.course),
+          events: reviewEvents,
+        }),
         source: parsed.source,
       }
 
